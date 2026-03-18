@@ -4,8 +4,13 @@
 
 
 ## Integrantes
+
 David
+
 Eduardo
+
 Gustavo
+
 Johan
+
 Jonathan
