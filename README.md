@@ -1,6 +1,7 @@
 # 🏎️ Danke Motorsport - Plataforma de Agendamento Premium
-
-![Logo Danke Motorsport](./dankelogo.jpeg)
+<p align="center">
+  <img src="./dankelogo.jpeg" alt="Logo Danke Motorsport" width="200">
+</p>
 
 > **UM NOVO CONCEITO EM REPARAÇÃO PREMIUM!!! 🇧🇷🇩🇪🇬🇧🇯🇵** > *Projeto full-stack desenvolvido para modernizar a captação de leads e a gestão de agendamentos de uma oficina mecânica especializada.*
 
