@@ -1,0 +1,7 @@
+.container-landing {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    color: var(--accent-gold);
+}
