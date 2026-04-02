@@ -5,7 +5,7 @@ function Navbar() {
         <div>
             <nav className="container-navbar">
                 <div className="container-logo">
-                    <img src="public/images/car-favicon.svg" alt="Logo Danke Motorsport" className='logo-navbar' />
+                    <img src="/images/car-favicon.svg" alt="Logo Danke Motorsport" className='logo-navbar' />
 
                     {/* <img src="public/images/dankelogo.jpeg" alt="Logo Danke Motorsport" className='logo-navbar' /> */}
                 </div>
