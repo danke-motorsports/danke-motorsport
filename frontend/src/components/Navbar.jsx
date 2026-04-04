@@ -18,9 +18,11 @@ function Navbar() {
                     </a>
                 </div>
                 <div className="container-auth">
-                    <button className='botao-auth-navbar'>
-                        ENTRAR
-                    </button>
+                    <a href="/auth">
+                        <button className='botao-auth-navbar'>
+                            ENTRAR
+                        </button>
+                    </a>
                 </div>
             </nav>
         </div>
