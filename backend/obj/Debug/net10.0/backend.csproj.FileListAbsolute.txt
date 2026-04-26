@@ -121,3 +121,6 @@ C:\Users\eduardo.steinbach\Documents\Eduardo - Suporte a Sistemas - CIEESC\UFSC\
 C:\Users\eduardo.steinbach\Documents\Eduardo - Suporte a Sistemas - CIEESC\UFSC\3ºsemestre\web\Danke-Motorsport\backend\obj\Debug\net10.0\backend.pdb
 C:\Users\eduardo.steinbach\Documents\Eduardo - Suporte a Sistemas - CIEESC\UFSC\3ºsemestre\web\Danke-Motorsport\backend\obj\Debug\net10.0\backend.genruntimeconfig.cache
 C:\Users\eduardo.steinbach\Documents\Eduardo - Suporte a Sistemas - CIEESC\UFSC\3ºsemestre\web\Danke-Motorsport\backend\obj\Debug\net10.0\ref\backend.dll
+C:\Users\eduardo.steinbach\Documents\Eduardo - Suporte a Sistemas - CIEESC\UFSC\3ºsemestre\web\Danke-Motorsport\backend\bin\Debug\net10.0\Swashbuckle.AspNetCore.Swagger.dll
+C:\Users\eduardo.steinbach\Documents\Eduardo - Suporte a Sistemas - CIEESC\UFSC\3ºsemestre\web\Danke-Motorsport\backend\bin\Debug\net10.0\Swashbuckle.AspNetCore.SwaggerGen.dll
+C:\Users\eduardo.steinbach\Documents\Eduardo - Suporte a Sistemas - CIEESC\UFSC\3ºsemestre\web\Danke-Motorsport\backend\bin\Debug\net10.0\Swashbuckle.AspNetCore.SwaggerUI.dll

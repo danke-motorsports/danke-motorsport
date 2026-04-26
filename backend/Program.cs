@@ -13,9 +13,22 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // Adiciona o suporte aos Controllers (que vamos criar depois)
 builder.Services.AddControllers();
 
+
+// 1. Adiciona os serviços ANTES do Build()
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
 var app = builder.Build();
+
+// 2. Usa o Swagger DEPOIS do Build()
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 
 // Configurações da rota e permissões
 app.MapControllers();
+
 
 app.Run();
