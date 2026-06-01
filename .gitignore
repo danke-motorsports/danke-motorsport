@@ -77,8 +77,17 @@ jspm_packages/
 # Yarn Integrity file
 .yarn-integrity
 
-# dotenv environment variables file
+# ── Variáveis de ambiente (NUNCA commitar arquivos com valores reais) ──────────
 .env
+.env.local
+.env.*.local
+.env.development
+.env.production
+# frontend/
+frontend/.env
+frontend/.env.local
+frontend/.env.*.local
+# ────────────────────────────────────────────────────────────────────────────────
 
 # next.js build output
 .next

@@ -3,8 +3,20 @@
 ##
 ## Get latest from `dotnet new gitignore`
 
-# dotenv files
+# ── Arquivos de configuração com segredos (NUNCA commitar) ───────────────────
+# Variáveis de ambiente
 .env
+.env.local
+.env.*.local
+
+# appsettings com segredos — use appsettings.Example.json como referência
+appsettings.Development.json
+appsettings.Production.json
+appsettings.*.local.json
+
+# User secrets do .NET (gerados por dotnet user-secrets)
+secrets.json
+# ─────────────────────────────────────────────────────────────────────────────
 
 # User-specific files
 *.rsuser
