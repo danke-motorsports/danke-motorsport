@@ -149,6 +149,17 @@ function Auth() {
                                         value={formData.confirmarSenha}
                                         onChange={handleChange}
                                     />
+                                    {mostrarSenha ?
+                                        <FaRegEye
+                                            className="btn-mostrar-senha"
+                                            onClick={() => { setMostrarSenha(!mostrarSenha) }}
+                                        />
+                                        :
+                                        <FaRegEyeSlash
+                                            className="btn-mostrar-senha"
+                                            onClick={() => { setMostrarSenha(!mostrarSenha) }}
+                                        />
+                                    }
                                 </div>
                             </div>
                             <div className="grupo-inpt">

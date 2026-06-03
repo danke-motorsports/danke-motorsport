@@ -49,3 +49,33 @@
     transition: 0.2s ease;
 
 }
+
+@media (max-width: 768px) {
+    .container-navbar {
+        padding: 15px 5vw;
+        /* height: auto; */
+        min-height: 80px;
+        justify-content: space-between;
+    }
+    
+    .container-secoes-navbar {
+        width: 100%;
+        order: 2;
+        margin-bottom: 5px;
+        justify-content: center;
+        gap: 30px;
+    }
+
+    .container-secoes-navbar a {
+        font-size: 14px;
+    }
+    
+    .container-auth {
+        order: 3;
+    }
+    
+    .botao-auth-navbar {
+        padding: 8px 12px;
+        font-size: 14px;
+    }
+}
