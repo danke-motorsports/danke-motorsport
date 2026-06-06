@@ -1,4 +1,7 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
+import api from '../services/api'
 import './Auth.css'
 import { FaEye, FaIdBadge, FaLock, FaPhoneAlt, FaRegEye, FaRegEyeSlash, FaUser } from "react-icons/fa";
 import { MdEmail } from "react-icons/md";
@@ -14,12 +17,62 @@ function Auth() {
         senha: "",
         confirmarSenha: "",
     })
+    const [error, setError] = useState("")
+    const [loading, setLoading] = useState(false)
+
+    const { login } = useAuth()
+    const navigate = useNavigate()
 
     const handleChange = (e) => {
         setFormData({
             ...formData,
             [e.target.name]: e.target.value,
         })
+    }
+
+    const handleSubmit = async (e) => {
+        e.preventDefault()
+        setError("")
+        setLoading(true)
+
+        try {
+            if (isLogin) {
+                const loggedUser = await login(formData.email, formData.senha)
+                if (loggedUser.role === "Cliente") {
+                    navigate('/client-dashboard')
+                } else if (loggedUser.role === "Funcionario") {
+                    navigate('/employee-dashboard')
+                }
+            } else {
+                if (formData.senha !== formData.confirmarSenha) {
+                    setError("As senhas não coincidem.")
+                    setLoading(false)
+                    return
+                }
+
+                await api.post('/danke/clientes', {
+                    nome: formData.nome,
+                    email: formData.email,
+                    cpf: formData.cpf,
+                    telefone: formData.telefone,
+                    senha: formData.senha,
+                    placaVeiculo: ""
+                })
+
+                alert("Cadastro realizado com sucesso! Faça o login.")
+                setIsLogin(true)
+                setFormData(prev => ({
+                    ...prev,
+                    senha: "",
+                    confirmarSenha: ""
+                }))
+            }
+        } catch (err) {
+            console.error(err)
+            setError(err.response?.data?.message || err.response?.data?.Senha?.[0] || "Erro ao processar requisição. Verifique seus dados.")
+        } finally {
+            setLoading(false)
+        }
     }
 
     return (
@@ -34,7 +87,7 @@ function Auth() {
                         </p>
                     </div>
                     {isLogin ?
-                        <form className="container-login">
+                        <form className="container-login" onSubmit={handleSubmit}>
                             <div className="grupo-inpt">
                                 <label className='label-inpt'>
                                     Email
@@ -78,6 +131,7 @@ function Auth() {
                                     }
                                 </div>
                             </div>
+                            {error && <div className="auth-error" style={{ color: '#ff4d4d', fontSize: '0.875rem', marginBottom: '1rem', textAlign: 'center' }}>{error}</div>}
                             <div className="footer-auth">
                                 <p className='texto-footer-auth'>
                                     Não tem uma conta?
@@ -85,13 +139,13 @@ function Auth() {
                                         Cadastre-se já
                                     </a>
                                 </p>
-                                <button type='submit' className="btn-auth">
-                                    ENTRAR
+                                <button type='submit' className="btn-auth" disabled={loading}>
+                                    {loading ? "CARREGANDO..." : "ENTRAR"}
                                 </button>
                             </div>
                         </form>
                         :
-                        <form className="container-cadastro">
+                        <form className="container-cadastro" onSubmit={handleSubmit}>
                             <div className="grupo-inpt">
                                 <label className='label-inpt'>
                                     Nome
@@ -210,6 +264,7 @@ function Auth() {
                                     />
                                 </div>
                             </div>
+                            {error && <div className="auth-error" style={{ color: '#ff4d4d', fontSize: '0.875rem', marginBottom: '1rem', textAlign: 'center' }}>{error}</div>}
                             <div className="footer-auth">
                                 <p className='texto-footer-auth'>
                                     Já possui uma conta?
@@ -217,8 +272,8 @@ function Auth() {
                                         Entre por aqui
                                     </a>
                                 </p>
-                                <button type='submit' className="btn-auth">
-                                    CADASTRAR
+                                <button type='submit' className="btn-auth" disabled={loading}>
+                                    {loading ? "CARREGANDO..." : "CADASTRAR"}
                                 </button>
                             </div>
                         </form>

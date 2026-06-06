@@ -1,5 +1,8 @@
 using Microsoft.EntityFrameworkCore;
-using backend.Data; // Certifique-se de que o AppDbContext está neste namespace
+using backend.Data;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,25 +13,68 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString));
 
-// Adiciona o suporte aos Controllers (que vamos criar depois)
+// Configura CORS para permitir requisições do React Frontend
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowReact", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173") // Vite React port
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
+// Configura JWT Authentication
+var jwtKey = builder.Configuration["Jwt:Key"];
+if (string.IsNullOrEmpty(jwtKey))
+{
+    jwtKey = "danke_motorsport_super_secret_key_1234567890_default"; // fallback seguro para desenvolvimento
+}
+var keyBytes = Encoding.ASCII.GetBytes(jwtKey);
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.RequireHttpsMetadata = false;
+    options.SaveToken = true;
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(keyBytes),
+        ValidateIssuer = false,
+        ValidateAudience = false,
+        ClockSkew = TimeSpan.Zero
+    };
+});
+
+builder.Services.AddAuthorization();
+
+// Adiciona o suporte aos Controllers
 builder.Services.AddControllers();
 
-
-// 1. Adiciona os serviços ANTES do Build()
+// Adiciona os serviços ANTES do Build()
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// 2. Usa o Swagger DEPOIS do Build()
+// Usa o Swagger DEPOIS do Build()
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
+app.UseCors("AllowReact");
+
+app.UseAuthentication();
+app.UseAuthorization();
+
 // Configurações da rota e permissões
 app.MapControllers();
-
 
 app.Run();

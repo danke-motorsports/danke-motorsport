@@ -38,10 +38,9 @@ public class Revisao {
         public Cliente? Cliente { get; set; }
     // fk de funcionario
         [Column("id_funcionario")]
-        public int IdFuncionario { get; set; }
+        public int? IdFuncionario { get; set; }
 
         [ForeignKey("IdFuncionario")]
-
         public Funcionario? Funcionario { get; set; }
 
 

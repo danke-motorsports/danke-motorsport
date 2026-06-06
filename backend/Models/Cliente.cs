@@ -29,6 +29,10 @@ namespace backend.Models
         [Column("placa_veiculo")]
         public string PlacaVeiculo { get; set; } = string.Empty;
 
+        [Required]
+        [Column("senha")]
+        public string Senha { get; set; } = string.Empty;
+
             public List<Revisao> Revisoes { get; set; } = new List<Revisao>();
     }
 }

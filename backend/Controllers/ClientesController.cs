@@ -38,8 +38,14 @@ public class ClientesController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
+        // Criptografa a senha antes de salvar no banco de dados
+        novoCliente.Senha = BCrypt.Net.BCrypt.HashPassword(novoCliente.Senha);
+
         _context.Clientes.Add(novoCliente);
         _context.SaveChanges();
+
+        // Remove a senha criptografada do retorno por segurança
+        novoCliente.Senha = string.Empty;
 
         return CreatedAtAction(nameof(ObterCliente), new { id = novoCliente.Id }, novoCliente);
     }

@@ -23,14 +23,16 @@ namespace backend.Models
 
         [Required]
         [Column("cargo")]
-
         public int Cargo { get; set; }
 
+        [Required]
+        [Column("email")]
+        public string Email { get; set; } = string.Empty;
+
+        [Required]
+        [Column("senha")]
+        public string Senha { get; set; } = string.Empty;
 
             public List<Revisao> Revisoes { get; set; } = new List<Revisao>();
-
-
-
-
     }
 }

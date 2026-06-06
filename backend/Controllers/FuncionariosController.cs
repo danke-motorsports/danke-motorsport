@@ -38,8 +38,14 @@ public class FuncionariosController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
+        // Criptografa a senha antes de salvar no banco de dados
+        novoFuncionario.Senha = BCrypt.Net.BCrypt.HashPassword(novoFuncionario.Senha);
+
         _context.Funcionarios.Add(novoFuncionario);
         _context.SaveChanges();
+
+        // Remove a senha criptografada do retorno por segurança
+        novoFuncionario.Senha = string.Empty;
 
         return CreatedAtAction(nameof(ObterFuncionario), new { id = novoFuncionario.IdFuncionario }, novoFuncionario);
     }
