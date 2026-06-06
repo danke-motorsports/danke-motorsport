@@ -21,4 +21,18 @@ jobs:
             echo "Erro: A variável SUPABASE_CONNECTION_STRING não está configurada nos Secrets do GitHub."
             exit 1
           fi
-          psql "$PG_CONN_STRING" -c "SELECT 1;"
+          python3 -c "
+          import os, subprocess, re
+          conn = os.environ.get('PG_CONN_STRING', '')
+          parts = dict(re.findall(r'(\w+)=([^;]+)', conn))
+          os.environ['PGPASSWORD'] = parts.get('Password', '')
+          subprocess.run([
+              'psql',
+              '-h', parts.get('Host', ''),
+              '-p', parts.get('Port', '5432'),
+              '-U', parts.get('Username', ''),
+              '-d', parts.get('Database', 'postgres'),
+              '-c', 'SELECT 1;'
+          ], check=True)
+          "
+
