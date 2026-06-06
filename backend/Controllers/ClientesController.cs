@@ -1,45 +1,78 @@
 using Microsoft.AspNetCore.Mvc;
-// Substitua "SeuProjeto" pelo nome real do seu namespace (ex: DankeMotorsport)
-using backend.Data; 
-using backend.Models; 
-using System.Linq;
+using backend.Data;
+using backend.Models;
 
 namespace backend.Controllers;
 
 [ApiController]
-[Route("danke/[controller]")] // A rota ficará: http://localhost:porta/danke/clientes
+[Route("danke/[controller]")]
 public class ClientesController : ControllerBase
 {
     private readonly AppDbContext _context;
 
-    // 1. Injeção de Dependência: O .NET entrega o "tradutor" do banco pronto para uso.
     public ClientesController(AppDbContext context)
     {
         _context = context;
     }
 
-    // 2. ROTA GET (Ler dados)
     [HttpGet]
     public IActionResult ListarClientes()
     {
-        // O Entity Framework faz o "SELECT * FROM Clientes" sozinho aqui
         var clientes = _context.Clientes.ToList();
-        
-        // Retorna o status HTTP 200 (OK) com a lista em JSON
-        return Ok(clientes); 
+        return Ok(clientes);
     }
 
-    // 3. ROTA POST (Inserir dados)
+    [HttpGet("{id}")]
+    public IActionResult ObterCliente(int id)
+    {
+        var cliente = _context.Clientes.Find(id);
+        if (cliente == null)
+            return NotFound();
+
+        return Ok(cliente);
+    }
+
     [HttpPost]
     public IActionResult CriarCliente([FromBody] Cliente novoCliente)
     {
-        // O Entity Framework prepara o "INSERT INTO"
-        _context.Clientes.Add(novoCliente);
-        
-        // Salva de fato no Supabase
-        _context.SaveChanges(); 
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
 
-        // Retorna o status HTTP 201 (Criado)
-        return Created("", novoCliente); 
+        _context.Clientes.Add(novoCliente);
+        _context.SaveChanges();
+
+        return CreatedAtAction(nameof(ObterCliente), new { id = novoCliente.Id }, novoCliente);
+    }
+
+    [HttpPut("{id}")]
+    public IActionResult AtualizarCliente(int id, [FromBody] Cliente clienteAtualizado)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        var cliente = _context.Clientes.Find(id);
+        if (cliente == null)
+            return NotFound();
+
+        cliente.Nome = clienteAtualizado.Nome;
+        cliente.Email = clienteAtualizado.Email;
+        cliente.Cpf = clienteAtualizado.Cpf;
+        cliente.Telefone = clienteAtualizado.Telefone;
+        cliente.PlacaVeiculo = clienteAtualizado.PlacaVeiculo;
+
+        _context.SaveChanges();
+        return Ok(cliente);
+    }
+
+    [HttpDelete("{id}")]
+    public IActionResult RemoverCliente(int id)
+    {
+        var cliente = _context.Clientes.Find(id);
+        if (cliente == null)
+            return NotFound();
+
+        _context.Clientes.Remove(cliente);
+        _context.SaveChanges();
+        return NoContent();
     }
 }

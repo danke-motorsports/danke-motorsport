@@ -1,45 +1,76 @@
 using Microsoft.AspNetCore.Mvc;
-// Substitua "SeuProjeto" pelo nome real do seu namespace (ex: DankeMotorsport)
-using backend.Data; 
-using backend.Models; 
-using System.Linq;
+using backend.Data;
+using backend.Models;
 
 namespace backend.Controllers;
 
 [ApiController]
-[Route("danke/[controller]")] // A rota ficará: http://localhost:porta/danke/Funcionarios
+[Route("danke/[controller]")]
 public class FuncionariosController : ControllerBase
 {
     private readonly AppDbContext _context;
 
-    // 1. Injeção de Dependência: O .NET entrega o "tradutor" do banco pronto para uso.
     public FuncionariosController(AppDbContext context)
     {
         _context = context;
     }
 
-    // 2. ROTA GET (Ler dados)
     [HttpGet]
     public IActionResult ListarFuncionarios()
     {
-        // O Entity Framework faz o "SELECT * FROM Funcionarios" sozinho aqui
         var funcionarios = _context.Funcionarios.ToList();
-        
-        // Retorna o status HTTP 200 (OK) com a lista em JSON
-        return Ok(funcionarios); 
+        return Ok(funcionarios);
     }
 
-    // 3. ROTA POST (Inserir dados)
+    [HttpGet("{id}")]
+    public IActionResult ObterFuncionario(int id)
+    {
+        var funcionario = _context.Funcionarios.Find(id);
+        if (funcionario == null)
+            return NotFound();
+
+        return Ok(funcionario);
+    }
+
     [HttpPost]
     public IActionResult CriarFuncionario([FromBody] Funcionario novoFuncionario)
     {
-        // O Entity Framework prepara o "INSERT INTO"
-        _context.Funcionarios.Add(novoFuncionario);
-        
-        // Salva de fato no Supabase
-        _context.SaveChanges(); 
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
 
-        // Retorna o status HTTP 201 (Criado)
-        return Created("", novoFuncionario); 
+        _context.Funcionarios.Add(novoFuncionario);
+        _context.SaveChanges();
+
+        return CreatedAtAction(nameof(ObterFuncionario), new { id = novoFuncionario.IdFuncionario }, novoFuncionario);
+    }
+
+    [HttpPut("{id}")]
+    public IActionResult AtualizarFuncionario(int id, [FromBody] Funcionario funcionarioAtualizado)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        var funcionario = _context.Funcionarios.Find(id);
+        if (funcionario == null)
+            return NotFound();
+
+        funcionario.NomeFuncionario = funcionarioAtualizado.NomeFuncionario;
+        funcionario.TipoFuncionario = funcionarioAtualizado.TipoFuncionario;
+        funcionario.Cargo = funcionarioAtualizado.Cargo;
+
+        _context.SaveChanges();
+        return Ok(funcionario);
+    }
+
+    [HttpDelete("{id}")]
+    public IActionResult RemoverFuncionario(int id)
+    {
+        var funcionario = _context.Funcionarios.Find(id);
+        if (funcionario == null)
+            return NotFound();
+
+        _context.Funcionarios.Remove(funcionario);
+        _context.SaveChanges();
+        return NoContent();
     }
 }
