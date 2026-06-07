@@ -7,18 +7,37 @@ using System.Security.Claims;
 
 namespace backend.Controllers;
 
+/// <summary>
+/// Controller para gerenciamento de Revisões (agendamentos de serviço).
+/// Implementa lógica de negócio com separação por role:
+/// Clientes criam e visualizam suas próprias revisões;
+/// Funcionários gerenciam revisões, atualizam status e se auto-atribuem.
+/// </summary>
 [ApiController]
 [Route("danke/[controller]")]
 public class RevisaoController : ControllerBase
 {
     private readonly AppDbContext _context;
 
+    /// <summary>
+    /// Inicializa o controller com o contexto de banco de dados.
+    /// </summary>
+    /// <param name="context">Contexto do Entity Framework Core.</param>
     public RevisaoController(AppDbContext context)
     {
         _context = context;
     }
 
-    // GET /danke/revisao
+    /// <summary>
+    /// Retorna revisões filtradas pela role do usuário autenticado:
+    /// Cliente recebe apenas as suas revisões;
+    /// Funcionário recebe as revisões associadas a ele.
+    /// </summary>
+    /// <returns>
+    /// 200 OK com lista de revisões filtrada por role.
+    /// 401 Unauthorized se o claim de ID não estiver presente.
+    /// 403 Forbidden se a role for inválida.
+    /// </returns>
     [HttpGet]
     [Authorize]
     public IActionResult ListarRevisoes()
@@ -49,8 +68,11 @@ public class RevisaoController : ControllerBase
         return Forbid();
     }
 
-    // GET /danke/revisao/cliente
-    // Retorna as revisões do cliente autenticado
+    /// <summary>
+    /// Retorna todas as revisões do cliente autenticado, ordenadas por data de agendamento decrescente.
+    /// Exclusivo para usuários com role <c>Cliente</c>.
+    /// </summary>
+    /// <returns>200 OK com lista de revisões do cliente ordenadas por data.</returns>
     [HttpGet("cliente")]
     [Authorize(Roles = "Cliente")]
     public IActionResult ObterRevisoesCliente()
@@ -68,8 +90,11 @@ public class RevisaoController : ControllerBase
         return Ok(revisoes);
     }
 
-    // GET /danke/revisao/funcionario
-    // Retorna as revisões associadas ao funcionário autenticado
+    /// <summary>
+    /// Retorna as revisões associadas ao funcionário autenticado, incluindo dados do cliente.
+    /// Exclusivo para usuários com role <c>Funcionario</c>.
+    /// </summary>
+    /// <returns>200 OK com lista de revisões do funcionário (com dados do cliente incluídos).</returns>
     [HttpGet("funcionario")]
     [Authorize(Roles = "Funcionario")]
     public IActionResult ObterRevisoesFuncionario()
@@ -87,8 +112,12 @@ public class RevisaoController : ControllerBase
         return Ok(revisoes);
     }
 
-    // GET /danke/revisao/pendentes
-    // Retorna todas as revisões que estão com status "Pendente"
+    /// <summary>
+    /// Retorna todas as revisões com StatusRevisao == "Pendente" (sem funcionário atribuído).
+    /// Usado pelo dashboard do funcionário para exibir o Kanban de revisões disponíveis.
+    /// Exclusivo para usuários com role <c>Funcionario</c>.
+    /// </summary>
+    /// <returns>200 OK com lista de revisões pendentes (com dados do cliente incluídos).</returns>
     [HttpGet("pendentes")]
     [Authorize(Roles = "Funcionario")]
     public IActionResult ObterRevisoesPendentes()
@@ -101,7 +130,17 @@ public class RevisaoController : ControllerBase
         return Ok(pendentes);
     }
 
-    // GET /danke/revisao/{id}
+    /// <summary>
+    /// Retorna uma revisão específica por ID, incluindo dados do cliente.
+    /// Clientes só podem acessar suas próprias revisões; Funcionários podem acessar qualquer uma.
+    /// </summary>
+    /// <param name="id">ID da revisão.</param>
+    /// <returns>
+    /// 200 OK com dados da revisão.
+    /// 401 Unauthorized se o claim de ID não estiver presente.
+    /// 403 Forbidden se um Cliente tentar acessar revisão de outro.
+    /// 404 Not Found se a revisão não existir.
+    /// </returns>
     [HttpGet("{id}")]
     [Authorize]
     public IActionResult ObterRevisao(int id)
@@ -110,7 +149,6 @@ public class RevisaoController : ControllerBase
         if (revisao == null)
             return NotFound();
 
-        // Verifica permissões simples (o cliente só pode ver a dele, funcionário pode ver todas)
         var role = User.FindFirst(ClaimTypes.Role)?.Value;
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
 
@@ -127,8 +165,18 @@ public class RevisaoController : ControllerBase
         return Ok(revisao);
     }
 
-    // POST /danke/revisao
-    // Cria uma revisão extraindo o ClienteId diretamente das Claims
+    /// <summary>
+    /// Cria uma nova revisão para o cliente autenticado.
+    /// O <c>IdCliente</c> é extraído diretamente do JWT (não deve ser enviado no body).
+    /// A revisão é criada com StatusRevisao = "Pendente" e sem funcionário atribuído.
+    /// Exclusivo para usuários com role <c>Cliente</c>.
+    /// </summary>
+    /// <param name="request">Dados da revisão: TipoRevisao (1=Bronze, 2=Silver, 3=Gold) e DatAgendamento.</param>
+    /// <returns>
+    /// 201 Created com dados da revisão criada.
+    /// 400 BadRequest se os dados forem inválidos.
+    /// 401 Unauthorized se o claim de ID não estiver presente.
+    /// </returns>
     [HttpPost]
     [Authorize(Roles = "Cliente")]
     public IActionResult CriarRevisao([FromBody] CriarRevisaoRequest request)
@@ -147,7 +195,7 @@ public class RevisaoController : ControllerBase
             StatusRevisao = "Pendente",
             TipoRevisao = request.TipoRevisao,
             DatAgendamento = request.DatAgendamento.ToUniversalTime(),
-            DatFinalizacao = request.DatAgendamento.ToUniversalTime(), // placeholder
+            DatFinalizacao = request.DatAgendamento.ToUniversalTime(), // placeholder; atualizado ao concluir
             IdCliente = clienteId,
             IdFuncionario = null // Inicialmente não atrelado a funcionário
         };
@@ -158,8 +206,20 @@ public class RevisaoController : ControllerBase
         return CreatedAtAction(nameof(ObterRevisao), new { id = novaRevisao.IdRevisao }, novaRevisao);
     }
 
-    // PATCH /danke/revisao/{id}
-    // Atualiza status e assinala o FuncionarioId na primeira interação
+    /// <summary>
+    /// Atualiza o status de uma revisão e auto-atribui o funcionário na primeira interação.
+    /// Se <c>IdFuncionario</c> for null, o funcionário autenticado é automaticamente atribuído.
+    /// Quando o status for "Concluído", <c>DatFinalizacao</c> é definida para o momento atual.
+    /// Exclusivo para usuários com role <c>Funcionario</c>.
+    /// </summary>
+    /// <param name="id">ID da revisão a atualizar.</param>
+    /// <param name="request">Novo status: "Pendente", "Em andamento" ou "Concluído".</param>
+    /// <returns>
+    /// 200 OK com dados atualizados da revisão.
+    /// 400 BadRequest se o status for inválido.
+    /// 401 Unauthorized se o claim de ID não estiver presente.
+    /// 404 Not Found se a revisão não existir.
+    /// </returns>
     [HttpPatch("{id}")]
     [Authorize(Roles = "Funcionario")]
     public IActionResult AtualizarStatus(int id, [FromBody] AtualizarStatusRequest request)
@@ -196,7 +256,17 @@ public class RevisaoController : ControllerBase
         return Ok(revisao);
     }
 
-    // DELETE /danke/revisao/{id}
+    /// <summary>
+    /// Remove uma revisão do banco de dados.
+    /// Clientes só podem remover suas próprias revisões; Funcionários podem remover qualquer uma.
+    /// </summary>
+    /// <param name="id">ID da revisão a remover.</param>
+    /// <returns>
+    /// 204 No Content em caso de sucesso.
+    /// 401 Unauthorized se o claim de ID não estiver presente.
+    /// 403 Forbidden se um Cliente tentar remover revisão de outro.
+    /// 404 Not Found se a revisão não existir.
+    /// </returns>
     [HttpDelete("{id}")]
     [Authorize]
     public IActionResult RemoverRevisao(int id)
@@ -224,13 +294,24 @@ public class RevisaoController : ControllerBase
     }
 }
 
+/// <summary>
+/// DTO para criação de uma nova revisão.
+/// O <c>IdCliente</c> não é enviado — é extraído do JWT pelo controller.
+/// </summary>
 public class CriarRevisaoRequest
 {
+    /// <summary>Tipo do pacote de revisão: 1 = Bronze, 2 = Silver, 3 = Gold.</summary>
     public int TipoRevisao { get; set; }
+
+    /// <summary>Data e hora desejada para o agendamento (será convertida para UTC).</summary>
     public DateTime DatAgendamento { get; set; }
 }
 
+/// <summary>
+/// DTO para atualização de status de uma revisão via PATCH.
+/// </summary>
 public class AtualizarStatusRequest
 {
+    /// <summary>Novo status da revisão. Valores aceitos: "Pendente", "Em andamento", "Concluído".</summary>
     public string StatusRevisao { get; set; } = string.Empty;
 }

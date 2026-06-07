@@ -1,9 +1,30 @@
+/**
+ * @file ClientDashboard.jsx
+ * @description Dashboard exclusivo para usuários com role "Cliente".
+ *
+ * Funcionalidades:
+ * - Solicitar nova revisão escolhendo plano (Bronze / Silver / Gold) e data
+ * - Visualizar histórico de todas as revisões do cliente autenticado
+ * - Logout
+ *
+ * Dados consumidos via GET /danke/revisao/cliente (autenticado por JWT).
+ * Agendamento via POST /danke/revisao (IdCliente extraído do JWT pelo backend).
+ *
+ * Acessível apenas por rotas protegidas com `allowedRoles={["Cliente"]}`.
+ */
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
 import './ClientDashboard.css';
 import { FaSignOutAlt, FaPlus, FaClock, FaHistory, FaWrench } from 'react-icons/fa';
 
+/**
+ * Componente do dashboard do cliente.
+ * Exibe formulário de agendamento e histórico de revisões.
+ *
+ * @returns {JSX.Element}
+ */
 function ClientDashboard() {
   const { user, logout } = useAuth();
   const [revisoes, setRevisoes] = useState([]);
@@ -18,6 +39,13 @@ function ClientDashboard() {
     carregarRevisoes();
   }, []);
 
+  /**
+   * Busca as revisões do cliente autenticado via GET /danke/revisao/cliente.
+   * Atualiza o estado `revisoes` com os dados retornados.
+   *
+   * @async
+   * @returns {Promise<void>}
+   */
   const carregarRevisoes = async () => {
     try {
       setLoadingHistory(true);
@@ -57,6 +85,12 @@ function ClientDashboard() {
     }
   };
 
+  /**
+   * Retorna o rótulo e a classe CSS do badge para o tipo de revisão.
+   *
+   * @param {number} tipo - Tipo da revisão: 1 = Bronze, 2 = Silver, 3 = Gold.
+   * @returns {{ name: string, class: string }}
+   */
   const getTipoLabel = (tipo) => {
     switch (tipo) {
       case 1: return { name: 'Bronze (Básico)', class: 'badge-bronze' };
@@ -66,6 +100,12 @@ function ClientDashboard() {
     }
   };
 
+  /**
+   * Retorna a classe CSS do badge de status da revisão.
+   *
+   * @param {string} status - Status da revisão: "Pendente", "Em Andamento" ou "Concluído".
+   * @returns {string} Nome da classe CSS correspondente.
+   */
   const getStatusLabel = (status) => {
     switch (status) {
       case 'Pendente': return 'status-pendente';
@@ -75,6 +115,12 @@ function ClientDashboard() {
     }
   };
 
+  /**
+   * Formata uma string de data ISO para o padrão brasileiro (dd/mm/aaaa às HH:MM).
+   *
+   * @param {string} dataStr - String de data no formato ISO 8601.
+   * @returns {string} Data formatada ou "-" se o valor for nulo/vazio.
+   */
   const formatarData = (dataStr) => {
     if (!dataStr) return '-';
     const data = new Date(dataStr);

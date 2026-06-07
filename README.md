@@ -60,6 +60,62 @@ Danke-Motorsport/
 
 ---
 
+## Fluxo de Autenticação
+
+O sistema utiliza JWT Bearer Authentication. O diagrama abaixo descreve o fluxo completo desde o login até o acesso a um endpoint protegido:
+
+```mermaid
+sequenceDiagram
+    actor U as Usuário (Browser)
+    participant F as Frontend (React)
+    participant A as AuthController
+    participant DB as PostgreSQL (Supabase)
+
+    %% --- Login ---
+    U->>F: Preenche email + senha e clica em Entrar
+    F->>A: POST /danke/auth/login { email, senha }
+    A->>DB: SELECT * FROM Clientes WHERE Email = ?
+    DB-->>A: Retorna registro (ou vazio)
+    alt Usuário é Cliente
+        A->>A: BCrypt.Verify(senha, hash)
+        A-->>F: 200 OK { token, user: { id, nome, role: "Cliente" } }
+    else Tenta em Funcionarios
+        A->>DB: SELECT * FROM Funcionarios WHERE Email = ?
+        DB-->>A: Retorna registro (ou vazio)
+        A->>A: BCrypt.Verify(senha, hash)
+        A-->>F: 200 OK { token, user: { id, nome, role: "Funcionario" } }
+    else Credenciais inválidas
+        A-->>F: 401 Unauthorized
+        F-->>U: Exibe mensagem de erro
+    end
+
+    %% --- Persistência e redirecionamento ---
+    F->>F: localStorage.setItem(token, user)
+    F->>F: AuthContext.setUser(user)
+    alt role === "Cliente"
+        F-->>U: Redireciona para /client-dashboard
+    else role === "Funcionario"
+        F-->>U: Redireciona para /employee-dashboard
+    end
+
+    %% --- Requisição autenticada ---
+    U->>F: Acessa rota protegida (ex: /client-dashboard)
+    F->>F: ProtectedRoute verifica signed + allowedRoles
+    F->>A: GET /danke/revisao/cliente<br/>Authorization: Bearer {token}
+    A->>A: JwtBearer valida assinatura + claims
+    alt Token válido
+        A->>DB: SELECT revisoes WHERE IdCliente = {claim.id}
+        DB-->>A: Lista de revisões
+        A-->>F: 200 OK [ ...revisões ]
+        F-->>U: Renderiza dashboard com dados
+    else Token inválido ou expirado
+        A-->>F: 401 Unauthorized
+        F-->>U: Redireciona para /auth
+    end
+```
+
+---
+
 ## Funcionalidades Principais (MVP)
 
 * **Para o Cliente:** Landing page responsiva, cadastro e login, formulário de agendamento de revisões/diagnósticos e acompanhamento de status.

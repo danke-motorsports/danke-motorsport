@@ -1,9 +1,30 @@
+/**
+ * @file EmployeeDashboard.jsx
+ * @description Dashboard Kanban exclusivo para usuários com role "Funcionario".
+ *
+ * Organiza as revisões em três colunas:
+ * - Pendentes: revisões aguardando atribuição (GET /danke/revisao/pendentes)
+ * - Em Andamento: revisões associadas ao funcionário autenticado em progresso
+ * - Concluídas: revisões finalizadas pelo funcionário
+ *
+ * Transições de status via PATCH /danke/revisao/{id}.
+ * Na primeira interação (Iniciar), o backend auto-atribui o IdFuncionario.
+ *
+ * Acessível apenas por rotas protegidas com `allowedRoles={["Funcionario"]}`.
+ */
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
 import './EmployeeDashboard.css';
 import { FaSignOutAlt, FaWrench, FaPlay, FaCheck, FaCar, FaUser, FaPhoneAlt, FaCalendarAlt } from 'react-icons/fa';
 
+/**
+ * Componente do dashboard Kanban do funcionário.
+ * Exibe revisões em três colunas e permite transições de status.
+ *
+ * @returns {JSX.Element}
+ */
 function EmployeeDashboard() {
   const { user, logout } = useAuth();
   
@@ -16,6 +37,13 @@ function EmployeeDashboard() {
     carregarDados();
   }, []);
 
+  /**
+   * Carrega as revisões pendentes e as revisões associadas ao funcionário autenticado.
+   * Executa duas requisições em paralelo; exibe mensagem de erro se alguma falhar.
+   *
+   * @async
+   * @returns {Promise<void>}
+   */
   const carregarDados = async () => {
     try {
       setLoading(true);
@@ -36,6 +64,15 @@ function EmployeeDashboard() {
     }
   };
 
+  /**
+   * Inicia uma revisão pendente: envia PATCH com status "Em Andamento".
+   * O backend auto-atribui o IdFuncionario se ainda não houver um.
+   * Recarrega os dados após sucesso.
+   *
+   * @async
+   * @param {number} idRevisao - ID da revisão a iniciar.
+   * @returns {Promise<void>}
+   */
   const handleStartRevision = async (idRevisao) => {
     try {
       setErrorMsg('');
@@ -54,6 +91,15 @@ function EmployeeDashboard() {
     }
   };
 
+  /**
+   * Conclui uma revisão em andamento: envia PATCH com status "Concluído".
+   * O backend registra DatFinalizacao = DateTime.UtcNow.
+   * Recarrega os dados após sucesso.
+   *
+   * @async
+   * @param {number} idRevisao - ID da revisão a concluir.
+   * @returns {Promise<void>}
+   */
   const handleCompleteRevision = async (idRevisao) => {
     try {
       setErrorMsg('');
@@ -75,6 +121,12 @@ function EmployeeDashboard() {
   const emAndamento = minhasRevisoes.filter(r => r.statusRevisao === 'Em Andamento');
   const concluidas = minhasRevisoes.filter(r => r.statusRevisao === 'Concluído');
 
+  /**
+   * Retorna o rótulo e classe CSS do badge para o tipo de revisão.
+   *
+   * @param {number} tipo - 1 = Bronze, 2 = Silver, 3 = Gold.
+   * @returns {{ name: string, class: string }}
+   */
   const getTipoLabel = (tipo) => {
     switch (tipo) {
       case 1: return { name: 'Bronze', class: 'badge-bronze' };
@@ -84,6 +136,12 @@ function EmployeeDashboard() {
     }
   };
 
+  /**
+   * Formata uma string de data ISO para o padrão brasileiro (dd/mm/aaaa HH:MM).
+   *
+   * @param {string} dataStr - String de data no formato ISO 8601.
+   * @returns {string} Data formatada ou "-" se o valor for nulo/vazio.
+   */
   const formatarData = (dataStr) => {
     if (!dataStr) return '-';
     const data = new Date(dataStr);

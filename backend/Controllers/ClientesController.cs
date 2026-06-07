@@ -6,18 +6,31 @@ using System.Security.Claims;
 
 namespace backend.Controllers;
 
+/// <summary>
+/// Controller CRUD para a entidade Cliente.
+/// Aplica autorização baseada em roles (Cliente / Funcionario) e
+/// verificação de propriedade (ownership) nos endpoints sensíveis.
+/// </summary>
 [ApiController]
 [Route("danke/[controller]")]
 public class ClientesController : ControllerBase
 {
     private readonly AppDbContext _context;
 
+    /// <summary>
+    /// Inicializa o controller com o contexto de banco de dados.
+    /// </summary>
+    /// <param name="context">Contexto do Entity Framework Core.</param>
     public ClientesController(AppDbContext context)
     {
         _context = context;
     }
 
-    // Somente funcionários podem listar todos os clientes
+    /// <summary>
+    /// Retorna a lista de todos os clientes cadastrados, sem expor o hash de senha.
+    /// Restrito a usuários com role <c>Funcionario</c>.
+    /// </summary>
+    /// <returns>200 OK com lista de { id, nome, email, cpf, telefone, placaVeiculo }.</returns>
     [HttpGet]
     [Authorize(Roles = "Funcionario")]
     public IActionResult ListarClientes()
@@ -28,7 +41,17 @@ public class ClientesController : ControllerBase
         return Ok(clientes);
     }
 
-    // Qualquer usuário autenticado pode buscar um cliente por id
+    /// <summary>
+    /// Retorna os dados de um cliente específico por ID.
+    /// Um Cliente só pode consultar o próprio perfil; Funcionários podem consultar qualquer um.
+    /// O hash de senha nunca é retornado.
+    /// </summary>
+    /// <param name="id">ID do cliente.</param>
+    /// <returns>
+    /// 200 OK com dados do cliente.
+    /// 403 Forbidden se um Cliente tentar acessar o perfil de outro.
+    /// 404 Not Found se o cliente não existir.
+    /// </returns>
     [HttpGet("{id}")]
     [Authorize]
     public IActionResult ObterCliente(int id)
@@ -49,7 +72,15 @@ public class ClientesController : ControllerBase
         return Ok(cliente);
     }
 
-    // Endpoint público: qualquer pessoa pode se cadastrar como cliente
+    /// <summary>
+    /// Cadastra um novo cliente. Endpoint público — não requer autenticação.
+    /// A senha é hasheada com BCrypt antes de persistir no banco.
+    /// </summary>
+    /// <param name="novoCliente">Dados do cliente a ser criado.</param>
+    /// <returns>
+    /// 201 Created com os dados do cliente criado (sem senha).
+    /// 400 BadRequest se os dados forem inválidos.
+    /// </returns>
     [HttpPost]
     public IActionResult CriarCliente([FromBody] Cliente novoCliente)
     {
@@ -68,7 +99,19 @@ public class ClientesController : ControllerBase
         return CreatedAtAction(nameof(ObterCliente), new { id = novoCliente.Id }, novoCliente);
     }
 
-    // Cliente só atualiza o próprio cadastro; Funcionario pode atualizar qualquer um
+    /// <summary>
+    /// Atualiza os dados de um cliente existente.
+    /// Um Cliente só pode atualizar o próprio cadastro; Funcionários podem atualizar qualquer um.
+    /// A senha não é alterada por este endpoint.
+    /// </summary>
+    /// <param name="id">ID do cliente a atualizar.</param>
+    /// <param name="clienteAtualizado">Novos dados do cliente.</param>
+    /// <returns>
+    /// 200 OK com os dados atualizados (sem senha).
+    /// 400 BadRequest se os dados forem inválidos.
+    /// 403 Forbidden se um Cliente tentar atualizar outro.
+    /// 404 Not Found se o cliente não existir.
+    /// </returns>
     [HttpPut("{id}")]
     [Authorize]
     public IActionResult AtualizarCliente(int id, [FromBody] Cliente clienteAtualizado)
@@ -98,7 +141,15 @@ public class ClientesController : ControllerBase
         return Ok(cliente);
     }
 
-    // Somente funcionários podem remover clientes
+    /// <summary>
+    /// Remove um cliente do banco de dados.
+    /// Restrito a usuários com role <c>Funcionario</c>.
+    /// </summary>
+    /// <param name="id">ID do cliente a remover.</param>
+    /// <returns>
+    /// 204 No Content em caso de sucesso.
+    /// 404 Not Found se o cliente não existir.
+    /// </returns>
     [HttpDelete("{id}")]
     [Authorize(Roles = "Funcionario")]
     public IActionResult RemoverCliente(int id)

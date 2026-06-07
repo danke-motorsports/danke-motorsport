@@ -1,6 +1,21 @@
+/**
+ * @file LandingPage.jsx
+ * @description Página inicial pública da Danke Motorsport.
+ *
+ * Exibe a proposta de valor da oficina com headline, subtexto descritivo
+ * e botões de CTA (Agendar Agora / Nossos Serviços).
+ * Acessível por qualquer visitante — não requer autenticação.
+ */
+
 import Navbar from '../components/Navbar'
 import './LandingPage.css'
 
+/**
+ * Componente da landing page.
+ * Renderiza Navbar + conteúdo hero com chamada para ação.
+ *
+ * @returns {JSX.Element}
+ */
 function LandingPage() {
   return (
     <div>

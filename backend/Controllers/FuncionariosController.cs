@@ -6,18 +6,31 @@ using System.Security.Claims;
 
 namespace backend.Controllers;
 
+/// <summary>
+/// Controller CRUD para a entidade Funcionário.
+/// Operações de escrita (criação, atualização, exclusão) exigem role <c>Funcionario</c>.
+/// Funcionários só podem atualizar o próprio cadastro (ownership check via JWT claim).
+/// </summary>
 [ApiController]
 [Route("danke/[controller]")]
 public class FuncionariosController : ControllerBase
 {
     private readonly AppDbContext _context;
 
+    /// <summary>
+    /// Inicializa o controller com o contexto de banco de dados.
+    /// </summary>
+    /// <param name="context">Contexto do Entity Framework Core.</param>
     public FuncionariosController(AppDbContext context)
     {
         _context = context;
     }
 
-    // Qualquer usuário autenticado pode listar funcionários (ex: cliente ver quem atendeu)
+    /// <summary>
+    /// Retorna a lista de todos os funcionários, sem expor o hash de senha.
+    /// Qualquer usuário autenticado pode consultar (ex: cliente saber quem fez a revisão).
+    /// </summary>
+    /// <returns>200 OK com lista de { idFuncionario, nomeFuncionario, cargo, tipoFuncionario, email }.</returns>
     [HttpGet]
     [Authorize]
     public IActionResult ListarFuncionarios()
@@ -28,7 +41,15 @@ public class FuncionariosController : ControllerBase
         return Ok(funcionarios);
     }
 
-    // Qualquer usuário autenticado pode buscar um funcionário por id
+    /// <summary>
+    /// Retorna os dados de um funcionário específico por ID.
+    /// O hash de senha nunca é retornado.
+    /// </summary>
+    /// <param name="id">ID do funcionário.</param>
+    /// <returns>
+    /// 200 OK com dados do funcionário.
+    /// 404 Not Found se o funcionário não existir.
+    /// </returns>
     [HttpGet("{id}")]
     [Authorize]
     public IActionResult ObterFuncionario(int id)
@@ -42,7 +63,16 @@ public class FuncionariosController : ControllerBase
         return Ok(funcionario);
     }
 
-    // Somente funcionários podem cadastrar outros funcionários
+    /// <summary>
+    /// Cadastra um novo funcionário no sistema.
+    /// Restrito a usuários com role <c>Funcionario</c>.
+    /// A senha é hasheada com BCrypt antes de persistir.
+    /// </summary>
+    /// <param name="novoFuncionario">Dados do funcionário a ser criado.</param>
+    /// <returns>
+    /// 201 Created com dados do funcionário criado (sem senha).
+    /// 400 BadRequest se os dados forem inválidos.
+    /// </returns>
     [HttpPost]
     [Authorize(Roles = "Funcionario")]
     public IActionResult CriarFuncionario([FromBody] Funcionario novoFuncionario)
@@ -62,7 +92,19 @@ public class FuncionariosController : ControllerBase
         return CreatedAtAction(nameof(ObterFuncionario), new { id = novoFuncionario.IdFuncionario }, novoFuncionario);
     }
 
-    // Funcionário só atualiza o próprio cadastro
+    /// <summary>
+    /// Atualiza os dados de um funcionário.
+    /// Um Funcionário só pode atualizar o próprio cadastro — a verificação é feita
+    /// pelo claim <c>NameIdentifier</c> do JWT. A senha não é alterada por este endpoint.
+    /// </summary>
+    /// <param name="id">ID do funcionário a atualizar.</param>
+    /// <param name="funcionarioAtualizado">Novos dados do funcionário.</param>
+    /// <returns>
+    /// 200 OK com dados atualizados (sem senha).
+    /// 400 BadRequest se os dados forem inválidos.
+    /// 403 Forbidden se tentar atualizar outro funcionário.
+    /// 404 Not Found se o funcionário não existir.
+    /// </returns>
     [HttpPut("{id}")]
     [Authorize(Roles = "Funcionario")]
     public IActionResult AtualizarFuncionario(int id, [FromBody] Funcionario funcionarioAtualizado)
@@ -89,7 +131,15 @@ public class FuncionariosController : ControllerBase
         return Ok(funcionario);
     }
 
-    // Somente funcionários podem remover outros funcionários
+    /// <summary>
+    /// Remove um funcionário do banco de dados.
+    /// Restrito a usuários com role <c>Funcionario</c>.
+    /// </summary>
+    /// <param name="id">ID do funcionário a remover.</param>
+    /// <returns>
+    /// 204 No Content em caso de sucesso.
+    /// 404 Not Found se o funcionário não existir.
+    /// </returns>
     [HttpDelete("{id}")]
     [Authorize(Roles = "Funcionario")]
     public IActionResult RemoverFuncionario(int id)
