@@ -13,23 +13,26 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString));
 
-// Configura CORS para permitir requisições do React Frontend
+// Configura CORS — origens lidas de appsettings (Development.json ou variável de ambiente)
+var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>();
+if (allowedOrigins == null || allowedOrigins.Length == 0)
+    throw new InvalidOperationException("AllowedOrigins não configurado. Defina em appsettings.Development.json ou nas variáveis de ambiente.");
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReact", policy =>
     {
-        policy.WithOrigins("http://localhost:5173") // Vite React port
+        policy.WithOrigins(allowedOrigins)
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
 });
 
-// Configura JWT Authentication
+// Configura JWT Authentication — chave lida de appsettings (nunca hardcoded)
 var jwtKey = builder.Configuration["Jwt:Key"];
 if (string.IsNullOrEmpty(jwtKey))
-{
-    jwtKey = "danke_motorsport_super_secret_key_1234567890_default"; // fallback seguro para desenvolvimento
-}
+    throw new InvalidOperationException("Jwt:Key não configurado. Defina em appsettings.Development.json ou nas variáveis de ambiente.");
+
 var keyBytes = Encoding.ASCII.GetBytes(jwtKey);
 
 builder.Services.AddAuthentication(options =>

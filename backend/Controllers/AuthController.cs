@@ -72,9 +72,8 @@ public class AuthController : ControllerBase
         
         var jwtKey = _configuration["Jwt:Key"];
         if (string.IsNullOrEmpty(jwtKey))
-        {
-            jwtKey = "danke_motorsport_super_secret_key_1234567890_default";
-        }
+            throw new InvalidOperationException("Jwt:Key não configurado. Defina em appsettings.Development.json ou nas variáveis de ambiente.");
+
         var key = Encoding.ASCII.GetBytes(jwtKey);
 
         var tokenDescriptor = new SecurityTokenDescriptor
