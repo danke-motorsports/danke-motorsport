@@ -1,9 +1,5 @@
-[build]
-builder = "nixpacks"
-
 [deploy]
-startCommand = "dotnet backend.dll"
-healthcheckPath = "/swagger/index.html"
+healthcheckPath = "/health"
 healthcheckTimeout = 300
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3

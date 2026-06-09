@@ -80,4 +80,7 @@ app.UseAuthorization();
 // Configurações da rota e permissões
 app.MapControllers();
 
+// Endpoint de health check para Railway (Swagger só existe em Development)
+app.MapGet("/health", () => Results.Ok(new { status = "healthy" }));
+
 app.Run();
