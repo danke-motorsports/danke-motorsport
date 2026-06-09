@@ -1,0 +1,131 @@
+.container-landing {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    height: calc(100vh - 80px);
+    color: var(--text-primary);
+    background-image: 
+        linear-gradient(to right, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.6) 40%, transparent 85%),
+        url(/images/mercedes.png);
+    background-repeat: no-repeat;
+    background-size: cover, cover; 
+    background-position: center, 240px center; 
+}
+
+
+.conteudo-landing {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-self: flex-start;
+    max-width: 45vw;
+    margin-left: 4%;
+    gap: 20px;
+
+}
+
+.texto-landing {
+    font-family: 'Space Grotesk';
+    font-size: 34px;
+    letter-spacing: -3px;
+    line-height: 1;
+}
+
+.btns-landing {
+    display: flex;
+    gap: 20px;
+}
+
+.btns-landing button {
+    font-family: 'Space Grotesk';
+    color: var(--text-primary);
+    padding: 20px;
+    font-weight: 600;
+    width: 220px;
+    letter-spacing: 3px;
+    cursor: pointer;
+
+}
+
+.btn-agendar {
+    background-color: var(--accent-red);
+    border: none;
+    position: relative;
+    z-index: 1;
+    transition: transform 0.3s ease;
+}
+
+.btn-agendar::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--accent-red);
+    filter: blur(10px); 
+    opacity: 0.6;
+    z-index: -1;
+    transition: opacity 0.3s ease, filter 0.3s ease;
+}
+
+.btn-agendar:hover, .btn-servicos:hover {
+    transform: scale(1.03);
+}
+
+.btn-servicos {
+    background: transparent;
+    border: solid 1px rgba(245, 245, 245, 0.48);
+    transition: transform 0.3s ease;
+}
+
+.btn-servicos::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    filter: blur(20px); 
+    opacity: 0.6;
+    z-index: -1;
+}
+
+@media (max-width: 768px) {
+    .container-landing {
+        background-image: 
+            linear-gradient(to bottom, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.7) 100%),
+            url(/images/mercedes.png);
+        background-position: center, center;
+        align-items: center;
+        text-align: center;
+    }
+
+    .conteudo-landing {
+        max-width: 90vw;
+        margin-left: 0;
+        align-items: center;
+    }
+
+    .texto-landing {
+        font-size: 32px;
+        letter-spacing: -2px;
+    }
+
+    .subtexto-landing {
+        font-size: 16px;
+    }
+
+    .btns-landing {
+        flex-direction: column;
+        width: 100%;
+        gap: 15px;
+        align-items: center;
+    }
+
+    .btns-landing button {
+        width: 100%;
+        max-width: 300px;
+    }
+}

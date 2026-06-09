@@ -1,0 +1,38 @@
+name: Keep Supabase Alive
+
+on:
+  schedule:
+    # Roda a cada 5 dias às 00:00 UTC para impedir que o Supabase pause o banco por inatividade
+    - cron: '0 0 */5 * *'
+  workflow_dispatch: # Permite rodar manualmente pelo painel do GitHub se quiser testar
+
+jobs:
+  ping-db:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Instalar cliente PostgreSQL
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Executar Query Keep-Alive
+        env:
+          PG_CONN_STRING: ${{ secrets.SUPABASE_CONNECTION_STRING }}
+        run: |
+          if [ -z "$PG_CONN_STRING" ]; then
+            echo "Erro: A variável SUPABASE_CONNECTION_STRING não está configurada nos Secrets do GitHub."
+            exit 1
+          fi
+          python3 -c "
+          import os, subprocess, re
+          conn = os.environ.get('PG_CONN_STRING', '')
+          parts = dict(re.findall(r'(\w+)=([^;]+)', conn))
+          os.environ['PGPASSWORD'] = parts.get('Password', '')
+          subprocess.run([
+              'psql',
+              '-h', parts.get('Host', ''),
+              '-p', parts.get('Port', '5432'),
+              '-U', parts.get('Username', ''),
+              '-d', parts.get('Database', 'postgres'),
+              '-c', 'SELECT 1;'
+          ], check=True)
+          "
+
