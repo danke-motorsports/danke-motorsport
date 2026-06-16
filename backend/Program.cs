@@ -6,8 +6,13 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. Pega a URL do Supabase lá do seu appsettings.json
+var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+if (string.IsNullOrWhiteSpace(connectionString))
+    throw new InvalidOperationException(
+        "ConnectionStrings:DefaultConnection não configurado. Defina em appsettings ou na variável de ambiente ConnectionStrings__DefaultConnection.");
 
 // 2. Ensina a API a usar o AppDbContext com o PostgreSQL
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -16,7 +21,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // Configura CORS — origens lidas de appsettings (Development.json ou variável de ambiente)
 var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>();
 if (allowedOrigins == null || allowedOrigins.Length == 0)
-    throw new InvalidOperationException("AllowedOrigins não configurado. Defina em appsettings.Development.json ou nas variáveis de ambiente.");
+    throw new InvalidOperationException(
+        "AllowedOrigins não configurado. Defina em appsettings ou nas variáveis de ambiente AllowedOrigins__0 (e opcionalmente AllowedOrigins__1).");
 
 builder.Services.AddCors(options =>
 {
@@ -31,7 +37,8 @@ builder.Services.AddCors(options =>
 // Configura JWT Authentication — chave lida de appsettings (nunca hardcoded)
 var jwtKey = builder.Configuration["Jwt:Key"];
 if (string.IsNullOrEmpty(jwtKey))
-    throw new InvalidOperationException("Jwt:Key não configurado. Defina em appsettings.Development.json ou nas variáveis de ambiente.");
+    throw new InvalidOperationException(
+        "Jwt:Key não configurado. Defina em appsettings ou na variável de ambiente Jwt__Key (mínimo 32 caracteres).");
 
 var keyBytes = Encoding.ASCII.GetBytes(jwtKey);
 
@@ -77,7 +84,8 @@ app.UseCors("AllowReact");
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Configurações da rota e permissões
+app.MapGet("/health", () => Results.Ok(new { status = "healthy" }));
+
 app.MapControllers();
 
 app.Run();

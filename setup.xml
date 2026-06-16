@@ -11,7 +11,7 @@
     Backend  : C# .NET 10 (ASP.NET Core Web API)
     ORM      : Entity Framework Core
     Banco    : PostgreSQL via Supabase
-    Deploy   : Vercel (frontend) — em breve
+    Deploy   : Vercel (frontend) + Railway (backend) + Supabase (produção)
   ============================================================
 -->
 
@@ -253,57 +253,118 @@ VITE_API_URL=http://localhost:5000
 
 
   <!-- ═══════════════════════════════════════════════════════
-       DEPLOY — FRONTEND NO VERCEL
+       DEPLOY — PRODUÇÃO
   ════════════════════════════════════════════════════════════ -->
   <deploy>
 
-    <servico nome="Vercel" camada="frontend" status="em-breve">
-      <descricao>
-        O frontend será hospedado gratuitamente no Vercel, conectado
-        diretamente ao repositório GitHub para deploy automático a cada push.
-      </descricao>
+    <politica-branches>
+      <branch nome="main">Desenvolvimento</branch>
+      <branch nome="production">Deploy de produção (única branch conectada ao Vercel e Railway)</branch>
+    </politica-branches>
 
-      <passo numero="1" titulo="Criar conta e conectar repositório">
+    <servico nome="Supabase" camada="banco">
+      <passo numero="1" titulo="Criar projeto de produção">
         <instrucoes>
-          1. Acesse https://vercel.com e faça login com a conta GitHub da equipe.
-          2. Clique em "Add New Project".
-          3. Selecione o repositório "danke-motorsport".
-          4. O Vercel detectará automaticamente que é um projeto Vite/React.
+          1. Crie um novo projeto no Supabase (separado do ambiente de desenvolvimento).
+          2. Guarde a senha do banco apenas nas variáveis do Railway — nunca no repositório.
+          3. Use conexão direta (recomendado no Railway) ou session pooler se IPv4 for obrigatório.
         </instrucoes>
       </passo>
 
-      <passo numero="2" titulo="Configurar o projeto no Vercel">
+      <passo numero="2" titulo="Aplicar migrations">
+        <comandos>
+          <comando>cd backend</comando>
+          <comando>ConnectionStrings__DefaultConnection="&lt;supabase-production-url&gt;" dotnet ef database update</comando>
+        </comandos>
+      </passo>
+
+      <passo numero="3" titulo="Bootstrap do primeiro funcionário/admin">
+        <instrucoes>
+          Gere um hash BCrypt da senha desejada (mesma biblioteca do backend: BCrypt.Net-Next)
+          e execute uma única vez no SQL Editor do Supabase:
+        </instrucoes>
+        <sql-exemplo>
+          INSERT INTO funcionarios (nome_funcionario, tipo_funcionario, cargo, email, senha)
+          VALUES ('Admin', 1, 1, 'admin@exemplo.com', '&lt;bcrypt-hash&gt;');
+        </sql-exemplo>
+        <verificacao>
+          Confirme tabelas: clientes, funcionarios, revisoes, __EFMigrationsHistory.
+        </verificacao>
+      </passo>
+    </servico>
+
+    <servico nome="Railway" camada="backend">
+      <passo numero="1" titulo="Criar serviço">
+        <instrucoes>
+          1. Deploy from GitHub repo → selecione danke-motorsport.
+          2. Root Directory: backend
+          3. Branch de deploy: production
+          4. Railway detecta backend/Dockerfile automaticamente.
+        </instrucoes>
+      </passo>
+
+      <passo numero="2" titulo="Configurar domínio e health check">
         <configuracoes>
-          <campo nome="Framework Preset">Vite</campo>
-          <campo nome="Root Directory">frontend</campo>
-          <campo nome="Build Command">npm run build</campo>
-          <campo nome="Output Directory">dist</campo>
-          <campo nome="Install Command">npm install</campo>
+          <campo nome="Health check path">/health</campo>
+          <campo nome="Domínio">Generate Domain (público)</campo>
         </configuracoes>
       </passo>
 
-      <passo numero="3" titulo="Adicionar variável de ambiente">
-        <instrucoes>
-          Em Settings > Environment Variables, adicione:
-          - Nome:  VITE_API_URL
-          - Valor: URL pública do backend (ex: https://danke-api.railway.app)
-          - Ambientes: Production, Preview, Development
-        </instrucoes>
+      <passo numero="3" titulo="Variáveis de ambiente">
+        <variaveis>
+          <var nome="ASPNETCORE_ENVIRONMENT">Production</var>
+          <var nome="ConnectionStrings__DefaultConnection">string do Supabase produção</var>
+          <var nome="Jwt__Key">segredo com 32+ caracteres (novo, exclusivo de produção)</var>
+          <var nome="AllowedOrigins__0">https://&lt;app&gt;.vercel.app</var>
+        </variaveis>
         <aviso>
-          A variável deve começar com VITE_ para ser exposta ao código
-          do frontend pelo Vite. Variáveis sem esse prefixo são ignoradas.
+          Após obter a URL do Vercel, atualize AllowedOrigins__0 com a origem exata e reinicie o serviço.
         </aviso>
       </passo>
+    </servico>
 
-      <passo numero="4" titulo="Deploy">
+    <servico nome="Vercel" camada="frontend">
+      <passo numero="1" titulo="Importar repositório">
         <instrucoes>
-          Clique em "Deploy". O Vercel executará npm run build e publicará
-          o conteúdo da pasta dist/. Deployments futuros ocorrem
-          automaticamente a cada push para a branch main.
+          1. Add New Project → repositório danke-motorsport.
+          2. Production Branch: production
+          3. Root Directory: frontend
         </instrucoes>
       </passo>
 
+      <passo numero="2" titulo="Build settings">
+        <configuracoes>
+          <campo nome="Framework Preset">Vite</campo>
+          <campo nome="Install Command">npm ci</campo>
+          <campo nome="Build Command">npm run build</campo>
+          <campo nome="Output Directory">dist</campo>
+        </configuracoes>
+      </passo>
+
+      <passo numero="3" titulo="Variável de ambiente">
+        <variaveis>
+          <var nome="VITE_API_URL">https://&lt;backend&gt;.up.railway.app</var>
+        </variaveis>
+        <aviso>
+          Variáveis expostas ao frontend devem usar o prefixo VITE_.
+          O arquivo frontend/vercel.json garante fallback SPA para rotas como /auth e /client-dashboard.
+        </aviso>
+      </passo>
     </servico>
+
+    <rollback>
+      <frontend>Redeploy de um deployment anterior estável no painel Vercel.</frontend>
+      <backend>Redeploy de um deployment anterior estável no painel Railway.</backend>
+      <banco>Migrations em produção exigem plano explícito para reverter; teste antes de aplicar.</banco>
+    </rollback>
+
+    <smoke-tests>
+      <teste>GET /health retorna 200</teste>
+      <teste>Carregar /, /auth, /client-dashboard, /employee-dashboard diretamente</teste>
+      <teste>Cadastro e login de cliente; login de funcionário bootstrap</teste>
+      <teste>Cliente cria revisão; funcionário atualiza status</teste>
+      <teste>Sem erros de CORS ou mixed content no console</teste>
+    </smoke-tests>
 
   </deploy>
 

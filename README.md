@@ -35,7 +35,8 @@ A arquitetura do projeto separa claramente as responsabilidades de interface e r
 | Back-end (API) | C# .NET 10 (ASP.NET Core Web API) |
 | ORM | Entity Framework Core |
 | Banco de Dados | PostgreSQL hospedado no Supabase |
-| Deploy Frontend | Vercel *(em breve)* |
+| Deploy Frontend | Vercel |
+| Deploy Backend | Railway |
 
 ---
 
@@ -157,13 +158,73 @@ npm run dev
 
 ---
 
-## Deploy
+## Deploy em Produção
 
-| Serviço | Plataforma | Status |
-|---|---|---|
-| Frontend | Vercel | 🔜 Em breve |
-| Backend | A definir (Railway / Render) | 🔜 Em breve |
-| Banco de Dados | Supabase (PostgreSQL) | ✅ Ativo |
+Produção usa três serviços: **Vercel** (frontend), **Railway** (backend) e **Supabase** (PostgreSQL). Deploys automáticos vêm apenas da branch `production`.
+
+### Política de branches
+
+| Branch | Uso |
+|---|---|
+| `main` | Desenvolvimento |
+| `production` | Deploy de produção (Vercel + Railway) |
+
+### Variáveis de ambiente
+
+**Railway (backend)**
+
+| Variável | Exemplo |
+|---|---|
+| `ASPNETCORE_ENVIRONMENT` | `Production` |
+| `ConnectionStrings__DefaultConnection` | string do Supabase (produção) |
+| `Jwt__Key` | segredo com 32+ caracteres |
+| `AllowedOrigins__0` | `https://<app>.vercel.app` |
+
+**Vercel (frontend)**
+
+| Variável | Exemplo |
+|---|---|
+| `VITE_API_URL` | `https://<backend>.up.railway.app` |
+
+### Banco de dados (primeira vez)
+
+1. Crie um projeto Supabase de produção.
+2. Aplique as migrations a partir de uma máquina confiável:
+
+```bash
+cd backend
+ConnectionStrings__DefaultConnection="<supabase-production-url>" dotnet ef database update
+```
+
+3. Crie o primeiro funcionário/admin com SQL único no Supabase SQL Editor. Gere o hash BCrypt localmente (mesma lib do backend) e execute:
+
+```sql
+INSERT INTO funcionarios (nome_funcionario, tipo_funcionario, cargo, email, senha)
+VALUES ('Admin', 1, 1, 'admin@exemplo.com', '<bcrypt-hash>');
+```
+
+4. Confirme as tabelas: `clientes`, `funcionarios`, `revisoes`, `__EFMigrationsHistory`.
+
+### Ordem de configuração dos provedores
+
+1. Faça push da branch `production` com o código pronto.
+2. Configure Railway (`backend/`, Dockerfile, health check `/health`) e obtenha a URL pública.
+3. Configure Vercel (`frontend/`, `VITE_API_URL` apontando para Railway).
+4. Atualize `AllowedOrigins__0` no Railway com a URL exata do Vercel e reinicie o backend.
+
+### Rollback
+
+- **Frontend/backend:** no painel Vercel ou Railway, faça redeploy de um deployment anterior estável.
+- **Banco:** migrations são irreversíveis em produção sem plano explícito; teste migrations em staging antes de aplicar.
+
+### Smoke tests pós-deploy
+
+- `GET https://<railway-domain>/health` retorna 200.
+- Rotas diretas: `/`, `/auth`, `/client-dashboard`, `/employee-dashboard`.
+- Cadastro e login de cliente; login de funcionário; criar e atualizar revisão.
+- Console do navegador sem erros de CORS ou mixed content.
+
+Para o passo a passo completo (local e produção), consulte [`setup.xml`](./setup.xml).
 
 ---
 
