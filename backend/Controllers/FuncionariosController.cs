@@ -74,7 +74,7 @@ public class FuncionariosController : ControllerBase
     /// 400 BadRequest se os dados forem inválidos.
     /// </returns>
     [HttpPost]
-    [Authorize(Roles = "Funcionario")]
+    [Authorize(Roles = "Funcionario,Admin")]
     public IActionResult CriarFuncionario([FromBody] Funcionario novoFuncionario)
     {
         if (!ModelState.IsValid)
@@ -106,14 +106,16 @@ public class FuncionariosController : ControllerBase
     /// 404 Not Found se o funcionário não existir.
     /// </returns>
     [HttpPut("{id}")]
-    [Authorize(Roles = "Funcionario")]
+    [Authorize(Roles = "Funcionario,Admin")]
     public IActionResult AtualizarFuncionario(int id, [FromBody] Funcionario funcionarioAtualizado)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
         var myId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
-        if (myId != id)
+        var role = User.FindFirst(ClaimTypes.Role)?.Value;
+
+        if (role != "Admin" && myId != id)
             return Forbid();
 
         var funcionario = _context.Funcionarios.Find(id);
@@ -124,6 +126,11 @@ public class FuncionariosController : ControllerBase
         funcionario.TipoFuncionario = funcionarioAtualizado.TipoFuncionario;
         funcionario.Cargo = funcionarioAtualizado.Cargo;
         funcionario.Email = funcionarioAtualizado.Email;
+
+        if (!string.IsNullOrEmpty(funcionarioAtualizado.Senha))
+        {
+            funcionario.Senha = BCrypt.Net.BCrypt.HashPassword(funcionarioAtualizado.Senha);
+        }
 
         _context.SaveChanges();
 
@@ -141,7 +148,7 @@ public class FuncionariosController : ControllerBase
     /// 404 Not Found se o funcionário não existir.
     /// </returns>
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Funcionario")]
+    [Authorize(Roles = "Funcionario,Admin")]
     public IActionResult RemoverFuncionario(int id)
     {
         var funcionario = _context.Funcionarios.Find(id);

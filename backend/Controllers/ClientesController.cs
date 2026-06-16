@@ -32,7 +32,7 @@ public class ClientesController : ControllerBase
     /// </summary>
     /// <returns>200 OK com lista de { id, nome, email, cpf, telefone, placaVeiculo }.</returns>
     [HttpGet]
-    [Authorize(Roles = "Funcionario")]
+    [Authorize(Roles = "Funcionario,Admin")]
     public IActionResult ListarClientes()
     {
         var clientes = _context.Clientes
@@ -151,7 +151,7 @@ public class ClientesController : ControllerBase
     /// 404 Not Found se o cliente não existir.
     /// </returns>
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Funcionario")]
+    [Authorize(Roles = "Funcionario,Admin")]
     public IActionResult RemoverCliente(int id)
     {
         var cliente = _context.Clientes.Find(id);

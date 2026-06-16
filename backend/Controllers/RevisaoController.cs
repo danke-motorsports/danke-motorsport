@@ -64,6 +64,14 @@ public class RevisaoController : ControllerBase
                 .ToList();
             return Ok(revisoes);
         }
+        else if (role == "Admin")
+        {
+            var revisoes = _context.Revisoes
+                .Include(r => r.Cliente)
+                .Include(r => r.Funcionario)
+                .ToList();
+            return Ok(revisoes);
+        }
 
         return Forbid();
     }
@@ -221,7 +229,7 @@ public class RevisaoController : ControllerBase
     /// 404 Not Found se a revisão não existir.
     /// </returns>
     [HttpPatch("{id}")]
-    [Authorize(Roles = "Funcionario")]
+    [Authorize(Roles = "Funcionario,Admin")]
     public IActionResult AtualizarStatus(int id, [FromBody] AtualizarStatusRequest request)
     {
         if (!ModelState.IsValid)
@@ -291,6 +299,40 @@ public class RevisaoController : ControllerBase
         _context.Revisoes.Remove(revisao);
         _context.SaveChanges();
         return NoContent();
+    }
+
+    /// <summary>
+    /// Atualiza uma revisão completa.
+    /// Exclusivo para administradores.
+    /// </summary>
+    [HttpPut("{id}")]
+    [Authorize(Roles = "Admin")]
+    public IActionResult AtualizarRevisao(int id, [FromBody] Revisao revisaoAtualizada)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        var revisao = _context.Revisoes.Find(id);
+        if (revisao == null)
+            return NotFound();
+
+        revisao.TipoRevisao = revisaoAtualizada.TipoRevisao;
+        revisao.StatusRevisao = revisaoAtualizada.StatusRevisao;
+        revisao.DatAgendamento = revisaoAtualizada.DatAgendamento.ToUniversalTime();
+        revisao.IdCliente = revisaoAtualizada.IdCliente;
+        revisao.IdFuncionario = revisaoAtualizada.IdFuncionario == 0 ? null : revisaoAtualizada.IdFuncionario;
+
+        if (revisao.StatusRevisao == "Concluído")
+        {
+            revisao.DatFinalizacao = DateTime.UtcNow;
+        }
+        else
+        {
+            revisao.DatFinalizacao = revisao.DatAgendamento;
+        }
+
+        _context.SaveChanges();
+        return Ok(revisao);
     }
 }
 

@@ -69,7 +69,8 @@ public class AuthController : ControllerBase
         var funcionario = _context.Funcionarios.FirstOrDefault(f => f.Email == request.Email);
         if (funcionario != null && BCrypt.Net.BCrypt.Verify(request.Senha, funcionario.Senha))
         {
-            var token = GenerateToken(funcionario.IdFuncionario.ToString(), "Funcionario", funcionario.NomeFuncionario, funcionario.Email);
+            var userRole = funcionario.TipoFuncionario == 1 ? "Admin" : "Funcionario";
+            var token = GenerateToken(funcionario.IdFuncionario.ToString(), userRole, funcionario.NomeFuncionario, funcionario.Email);
             return Ok(new
             {
                 token,
@@ -78,7 +79,7 @@ public class AuthController : ControllerBase
                     id = funcionario.IdFuncionario,
                     nome = funcionario.NomeFuncionario,
                     email = funcionario.Email,
-                    role = "Funcionario"
+                    role = userRole
                 }
             });
         }
