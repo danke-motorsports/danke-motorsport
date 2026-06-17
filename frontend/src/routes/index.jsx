@@ -3,6 +3,7 @@ import LandingPage from "../pages/LandingPage";
 import Auth from "../pages/Auth";
 import ClientDashboard from "../pages/ClientDashboard";
 import EmployeeDashboard from "../pages/EmployeeDashboard";
+import AdminDashboard from "../pages/AdminDashboard";
 import { ProtectedRoute } from "./ProtectedRoute";
 
 const router = createBrowserRouter([
@@ -18,6 +19,12 @@ const router = createBrowserRouter([
         element: <ProtectedRoute allowedRoles={["Funcionario"]} />,
         children: [
             { path: "/employee-dashboard", element: <EmployeeDashboard /> }
+        ]
+    },
+    {
+        element: <ProtectedRoute allowedRoles={["Admin"]} />,
+        children: [
+            { path: "/admin-dashboard", element: <AdminDashboard /> }
         ]
     }
 ]);
