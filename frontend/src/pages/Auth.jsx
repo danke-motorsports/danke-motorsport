@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import api from '../services/api'
 import './Auth.css'
-import { FaIdBadge, FaLock, FaPhoneAlt, FaRegEye, FaRegEyeSlash, FaUser } from "react-icons/fa";
+import { FaEye, FaIdBadge, FaLock, FaPhoneAlt, FaRegEye, FaRegEyeSlash, FaUser } from "react-icons/fa";
 import { MdEmail } from "react-icons/md";
 
 function Auth() {
@@ -42,6 +42,8 @@ function Auth() {
                     navigate('/client-dashboard')
                 } else if (loggedUser.role === "Funcionario") {
                     navigate('/employee-dashboard')
+                } else if (loggedUser.role === "Admin") {
+                    navigate('/admin-dashboard')
                 }
             } else {
                 if (formData.senha !== formData.confirmarSenha) {
