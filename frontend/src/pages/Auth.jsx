@@ -89,10 +89,18 @@ function Auth() {
             <div className="container-auth">
                 <div className="container-form">
                     <div className="header-auth">
-                        {/* <img src="/images/dankelogo.jpeg" alt="Logo da Oficina" className='logo-auth' /> */}
+                        <img
+                            src="/images/dankelogo-auth.png"
+                            alt="Danke Motorsport"
+                            className="logo-auth-header"
+                        />
+                        <h1 className="titulo-auth">
+                            {isLogin ? 'Bem-vindo de volta' : 'Crie sua conta'}
+                        </h1>
                         <p className="subtitulo-auth">
-                            {isLogin ? "Bem vindo de volta!" : "Crie sua conta"}
-                            {/* <button onClick={() => { setIsLogin(!isLogin) }}>trocar auth</button> */}
+                            {isLogin
+                                ? 'Entre para acompanhar seus agendamentos e cuidar do seu veículo com a Danke Motorsport.'
+                                : 'Junte-se à Danke Motorsport e agende sua revisão com o padrão premium que seu carro merece.'}
                         </p>
                     </div>
                     {isLogin ?

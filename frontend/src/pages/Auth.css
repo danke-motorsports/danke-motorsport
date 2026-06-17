@@ -1,12 +1,18 @@
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap');
+
 .container-auth {
+    position: relative;
     height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
-    /* background-image: url(/images/auth-bg.png); */
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
+    background-color: #0a0a0a;
+    overflow: hidden;
+}
+
+.container-form {
+    position: relative;
+    z-index: 1;
 }
 
 .container-login,
@@ -21,9 +27,43 @@
 /* HEADER */
 .header-auth {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 5px;
+    gap: 1.5rem;
+    margin-bottom: 1.25rem;
+    padding: 0 1rem;
+}
+
+.titulo-auth {
+    font-family: 'Instrument Serif', Georgia, 'Times New Roman', serif;
+    font-size: clamp(2rem, 5vw, 2.85rem);
+    font-weight: 400;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    color: var(--text-primary);
+    text-align: center;
+    margin: 0;
+}
+
+.logo-auth-header {
+    width: min(320px, 78vw);
+    height: auto;
+    object-fit: contain;
+    margin: 0;
+    filter: drop-shadow(0 12px 32px rgba(0, 0, 0, 0.55));
+}
+
+.subtitulo-auth {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.92rem;
+    font-weight: 300;
+    color: rgba(255, 255, 255, 0.62);
+    text-align: center;
+    max-width: 340px;
+    line-height: 1.55;
+    margin: 0;
+    letter-spacing: 0.01em;
 }
 
 .logo-auth {
@@ -53,7 +93,7 @@
 }
 
 .inpt-form {
-    width: 25vw;
+    width: min(440px, 38vw);
     background-color: rgba(255, 255, 255, 0.05);
     height: 6vh;
     padding: 10px;
@@ -137,9 +177,26 @@
 }
 
 @media (max-width: 768px) {
+    .titulo-auth {
+        font-size: 1.85rem;
+    }
+
+    .logo-auth-header {
+        width: min(260px, 85vw);
+    }
+
+    .header-auth {
+        gap: 1.25rem;
+    }
+
+    .subtitulo-auth {
+        font-size: 0.85rem;
+        max-width: 280px;
+    }
+
     .container-form {
         width: 90%;
-        max-width: 400px;
+        max-width: 460px;
     }
 
     .container-login,
