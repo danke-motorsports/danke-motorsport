@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { IMaskInput } from 'react-imask'
+import toast from 'react-hot-toast'
 import { useAuth } from '../contexts/AuthContext'
 import api from '../services/api'
 import './Auth.css'
-import { FaEye, FaIdBadge, FaLock, FaPhoneAlt, FaRegEye, FaRegEyeSlash, FaUser } from "react-icons/fa";
+import { FaIdBadge, FaLock, FaPhoneAlt, FaRegEye, FaRegEyeSlash, FaUser } from "react-icons/fa";
 import { MdEmail } from "react-icons/md";
 
 function Auth() {
@@ -23,11 +25,25 @@ function Auth() {
     const { login } = useAuth()
     const navigate = useNavigate()
 
+    const handleMaskedChange = (name, value) => {
+        setFormData(prev => ({ ...prev, [name]: value }))
+    }
+
     const handleChange = (e) => {
         setFormData({
             ...formData,
             [e.target.name]: e.target.value,
         })
+    }
+
+    const navigateByRole = (loggedUser) => {
+        if (loggedUser.role === "Cliente") {
+            navigate('/client-dashboard')
+        } else if (loggedUser.role === "Funcionario") {
+            navigate('/employee-dashboard')
+        } else if (loggedUser.role === "Admin") {
+            navigate('/admin-dashboard')
+        }
     }
 
     const handleSubmit = async (e) => {
@@ -38,13 +54,8 @@ function Auth() {
         try {
             if (isLogin) {
                 const loggedUser = await login(formData.email, formData.senha)
-                if (loggedUser.role === "Cliente") {
-                    navigate('/client-dashboard')
-                } else if (loggedUser.role === "Funcionario") {
-                    navigate('/employee-dashboard')
-                } else if (loggedUser.role === "Admin") {
-                    navigate('/admin-dashboard')
-                }
+                toast.success(`Bem-vindo, ${loggedUser.nome}!`)
+                navigateByRole(loggedUser)
             } else {
                 if (formData.senha !== formData.confirmarSenha) {
                     setError("As senhas não coincidem.")
@@ -61,13 +72,9 @@ function Auth() {
                     placaVeiculo: ""
                 })
 
-                alert("Cadastro realizado com sucesso! Faça o login.")
-                setIsLogin(true)
-                setFormData(prev => ({
-                    ...prev,
-                    senha: "",
-                    confirmarSenha: ""
-                }))
+                const loggedUser = await login(formData.email, formData.senha)
+                toast.success('Cadastro realizado com sucesso!')
+                navigateByRole(loggedUser)
             }
         } catch (err) {
             console.error(err)
@@ -240,13 +247,15 @@ function Auth() {
                                 </label>
                                 <div className="container-inpt-auth">
                                     <FaIdBadge className='icon-inpt' />
-                                    <input
+                                    <IMaskInput
                                         type='text'
                                         name='cpf'
                                         className='inpt-form'
-                                        placeholder='XXX.XXX.XXX-XX'
+                                        placeholder='000.000.000-00'
+                                        mask='000.000.000-00'
                                         value={formData.cpf}
-                                        onChange={handleChange}
+                                        onAccept={(value) => handleMaskedChange('cpf', value)}
+                                        inputMode='numeric'
                                     />
                                 </div>
                             </div>
@@ -256,13 +265,18 @@ function Auth() {
                                 </label>
                                 <div className="container-inpt-auth">
                                     <FaPhoneAlt className='icon-inpt' />
-                                    <input
+                                    <IMaskInput
                                         type='tel'
                                         name='telefone'
                                         className='inpt-form'
-                                        placeholder='(XX) XXXXX-XXXX'
+                                        placeholder='(00) 00000-0000'
+                                        mask={[
+                                            { mask: '(00) 0000-0000' },
+                                            { mask: '(00) 00000-0000' },
+                                        ]}
                                         value={formData.telefone}
-                                        onChange={handleChange}
+                                        onAccept={(value) => handleMaskedChange('telefone', value)}
+                                        inputMode='tel'
                                     />
                                 </div>
                             </div>
