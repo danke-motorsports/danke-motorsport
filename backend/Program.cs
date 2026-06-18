@@ -64,7 +64,11 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization();
 
 // Adiciona o suporte aos Controllers
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+    });
 
 // Adiciona os serviços ANTES do Build()
 builder.Services.AddEndpointsApiExplorer();
