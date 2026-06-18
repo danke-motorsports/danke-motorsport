@@ -17,7 +17,7 @@ function Navbar() {
                         SOBRE NÓS
                     </a>
                 </div>
-                <div className="container-auth">
+                <div className="navbar-auth">
                     <a href="/auth">
                         <button className='botao-auth-navbar'>
                             ENTRAR

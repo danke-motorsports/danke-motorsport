@@ -49,20 +49,24 @@ function EmployeeDashboard() {
       setLoading(true);
       setErrorMsg('');
       
-      // 1. Carrega as revisões pendentes (sem funcionário associado)
-      const responsePendentes = await api.get('/danke/revisao/pendentes');
-      setPendentes(responsePendentes.data);
+      const [responsePendentes, responseMinhas] = await Promise.all([
+        api.get('/danke/revisao/pendentes'),
+        api.get('/danke/revisao/funcionario'),
+      ]);
 
-      // 2. Carrega as revisões associadas ao funcionário logado
-      const responseMinhas = await api.get('/danke/revisao/funcionario');
+      setPendentes(responsePendentes.data);
       setMinhasRevisoes(responseMinhas.data);
     } catch (error) {
       console.error('Erro ao carregar dados do Kanban:', error);
-      setErrorMsg('Não foi possível carregar os dados. Verifique a conexão com a API.');
+      const apiMessage = error.response?.data?.message;
+      setErrorMsg(apiMessage || 'Não foi possível carregar os dados. Verifique a conexão com a API.');
     } finally {
       setLoading(false);
     }
   };
+
+  const getApiErrorMessage = (error, fallback) =>
+    error.response?.data?.message || fallback;
 
   /**
    * Inicia uma revisão pendente: envia PATCH com status "Em Andamento".
@@ -76,18 +80,13 @@ function EmployeeDashboard() {
   const handleStartRevision = async (idRevisao) => {
     try {
       setErrorMsg('');
-      // Dispara PATCH para mover para "Em Andamento" e atrelar ao funcionário
-      const response = await api.patch(`/danke/revisao/${idRevisao}`, {
+      await api.patch(`/danke/revisao/${idRevisao}`, {
         statusRevisao: 'Em Andamento'
       });
-
-      if (response.status === 200) {
-        // Recarrega os dados após o sucesso
-        carregarDados();
-      }
+      await carregarDados();
     } catch (error) {
       console.error('Erro ao iniciar revisão:', error);
-      setErrorMsg('Falha ao iniciar a revisão. Tente novamente.');
+      setErrorMsg(getApiErrorMessage(error, 'Falha ao iniciar a revisão. Tente novamente.'));
     }
   };
 
@@ -103,17 +102,13 @@ function EmployeeDashboard() {
   const handleCompleteRevision = async (idRevisao) => {
     try {
       setErrorMsg('');
-      // Dispara PATCH para mover para "Concluído"
-      const response = await api.patch(`/danke/revisao/${idRevisao}`, {
+      await api.patch(`/danke/revisao/${idRevisao}`, {
         statusRevisao: 'Concluído'
       });
-
-      if (response.status === 200) {
-        carregarDados();
-      }
+      await carregarDados();
     } catch (error) {
       console.error('Erro ao concluir revisão:', error);
-      setErrorMsg('Falha ao concluir a revisão. Tente novamente.');
+      setErrorMsg(getApiErrorMessage(error, 'Falha ao concluir a revisão. Tente novamente.'));
     }
   };
 

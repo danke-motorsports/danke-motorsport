@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace backend.Models
 {
@@ -31,8 +32,10 @@ namespace backend.Models
 
         [Required]
         [Column("senha")]
+        [JsonIgnore]
         public string Senha { get; set; } = string.Empty;
 
-            public List<Revisao> Revisoes { get; set; } = new List<Revisao>();
+        [JsonIgnore]
+        public List<Revisao> Revisoes { get; set; } = new List<Revisao>();
     }
 }

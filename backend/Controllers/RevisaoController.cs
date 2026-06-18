@@ -104,7 +104,7 @@ public class RevisaoController : ControllerBase
     /// </summary>
     /// <returns>200 OK com lista de revisões do funcionário (com dados do cliente incluídos).</returns>
     [HttpGet("funcionario")]
-    [Authorize(Roles = "Funcionario")]
+    [Authorize(Roles = "Funcionario,Admin")]
     public IActionResult ObterRevisoesFuncionario()
     {
         var funcionarioIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
@@ -127,12 +127,12 @@ public class RevisaoController : ControllerBase
     /// </summary>
     /// <returns>200 OK com lista de revisões pendentes (com dados do cliente incluídos).</returns>
     [HttpGet("pendentes")]
-    [Authorize(Roles = "Funcionario")]
+    [Authorize(Roles = "Funcionario,Admin")]
     public IActionResult ObterRevisoesPendentes()
     {
         var pendentes = _context.Revisoes
             .Include(r => r.Cliente)
-            .Where(r => r.StatusRevisao == "Pendente")
+            .Where(r => r.StatusRevisao == "Pendente" && r.IdFuncionario == null)
             .ToList();
 
         return Ok(pendentes);
@@ -221,7 +221,7 @@ public class RevisaoController : ControllerBase
     /// Exclusivo para usuários com role <c>Funcionario</c>.
     /// </summary>
     /// <param name="id">ID da revisão a atualizar.</param>
-    /// <param name="request">Novo status: "Pendente", "Em andamento" ou "Concluído".</param>
+    /// <param name="request">Novo status: "Pendente", "Em Andamento" ou "Concluído".</param>
     /// <returns>
     /// 200 OK com dados atualizados da revisão.
     /// 400 BadRequest se o status for inválido.
@@ -235,6 +235,12 @@ public class RevisaoController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
+        var statusPermitidos = new[] { "Pendente", "Em Andamento", "Concluído" };
+        if (!statusPermitidos.Contains(request.StatusRevisao))
+        {
+            return BadRequest(new { message = "Status inválido. Use: Pendente, Em Andamento ou Concluído." });
+        }
+
         var revisao = _context.Revisoes.Find(id);
         if (revisao == null)
             return NotFound();
@@ -244,6 +250,12 @@ public class RevisaoController : ControllerBase
             return Unauthorized();
 
         int funcionarioId = int.Parse(funcionarioIdClaim.Value);
+        var role = User.FindFirst(ClaimTypes.Role)?.Value;
+
+        if (role != "Admin" && revisao.IdFuncionario != null && revisao.IdFuncionario != funcionarioId)
+        {
+            return StatusCode(403, new { message = "Esta revisão já está atribuída a outro funcionário." });
+        }
 
         // Se a revisão ainda não tem funcionário associado (primeira interação), assinala o FuncionarioId
         if (revisao.IdFuncionario == null)
@@ -354,6 +366,6 @@ public class CriarRevisaoRequest
 /// </summary>
 public class AtualizarStatusRequest
 {
-    /// <summary>Novo status da revisão. Valores aceitos: "Pendente", "Em andamento", "Concluído".</summary>
+    /// <summary>Novo status da revisão. Valores aceitos: "Pendente", "Em Andamento", "Concluído".</summary>
     public string StatusRevisao { get; set; } = string.Empty;
 }

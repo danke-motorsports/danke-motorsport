@@ -16,7 +16,7 @@ const router = createBrowserRouter([
         ]
     },
     {
-        element: <ProtectedRoute allowedRoles={["Funcionario"]} />,
+        element: <ProtectedRoute allowedRoles={["Funcionario", "Admin"]} />,
         children: [
             { path: "/employee-dashboard", element: <EmployeeDashboard /> }
         ]
