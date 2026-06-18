@@ -80,6 +80,13 @@ public class FuncionariosController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
+        // Verifica se o e-mail já está em uso por outro cliente ou funcionário
+        if (_context.Clientes.Any(c => c.Email == novoFuncionario.Email) ||
+            _context.Funcionarios.Any(f => f.Email == novoFuncionario.Email))
+        {
+            return Conflict(new { message = "Este e-mail já está em uso." });
+        }
+
         // Criptografa a senha antes de salvar no banco de dados
         novoFuncionario.Senha = BCrypt.Net.BCrypt.HashPassword(novoFuncionario.Senha);
 
@@ -121,6 +128,16 @@ public class FuncionariosController : ControllerBase
         var funcionario = _context.Funcionarios.Find(id);
         if (funcionario == null)
             return NotFound();
+
+        // Verifica se o e-mail mudou e se o novo e-mail já está cadastrado por outro usuário
+        if (funcionario.Email != funcionarioAtualizado.Email)
+        {
+            if (_context.Clientes.Any(c => c.Email == funcionarioAtualizado.Email) ||
+                _context.Funcionarios.Any(f => f.Email == funcionarioAtualizado.Email))
+            {
+                return Conflict(new { message = "Este e-mail já está em uso por outro usuário." });
+            }
+        }
 
         funcionario.NomeFuncionario = funcionarioAtualizado.NomeFuncionario;
         funcionario.TipoFuncionario = funcionarioAtualizado.TipoFuncionario;

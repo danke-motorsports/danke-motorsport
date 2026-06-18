@@ -13,5 +13,18 @@ namespace backend.Data
         public DbSet<Cliente> Clientes { get; set; }
         public DbSet<Funcionario> Funcionarios { get; set; }
         public DbSet<Revisao> Revisoes { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+            modelBuilder.Entity<Cliente>()
+                .HasIndex(c => c.Email)
+                .IsUnique();
+
+            modelBuilder.Entity<Funcionario>()
+                .HasIndex(f => f.Email)
+                .IsUnique();
+        }
     }
 }

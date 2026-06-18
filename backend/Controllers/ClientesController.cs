@@ -87,6 +87,13 @@ public class ClientesController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
+        // Verifica se o e-mail já está em uso por outro cliente ou funcionário
+        if (_context.Clientes.Any(c => c.Email == novoCliente.Email) ||
+            _context.Funcionarios.Any(f => f.Email == novoCliente.Email))
+        {
+            return Conflict(new { message = "Este e-mail já está em uso." });
+        }
+
         // Criptografa a senha antes de salvar no banco de dados
         novoCliente.Senha = BCrypt.Net.BCrypt.HashPassword(novoCliente.Senha);
 
@@ -128,6 +135,16 @@ public class ClientesController : ControllerBase
         var cliente = _context.Clientes.Find(id);
         if (cliente == null)
             return NotFound();
+
+        // Verifica se o e-mail mudou e se o novo e-mail já está cadastrado por outro usuário
+        if (cliente.Email != clienteAtualizado.Email)
+        {
+            if (_context.Clientes.Any(c => c.Email == clienteAtualizado.Email) ||
+                _context.Funcionarios.Any(f => f.Email == clienteAtualizado.Email))
+            {
+                return Conflict(new { message = "Este e-mail já está em uso por outro usuário." });
+            }
+        }
 
         cliente.Nome = clienteAtualizado.Nome;
         cliente.Email = clienteAtualizado.Email;
