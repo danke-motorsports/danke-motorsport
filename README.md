@@ -128,24 +128,46 @@ sequenceDiagram
 
 Antes de executar o projeto localmente, você precisará ter instalado:
 
-* [Node.js](https://nodejs.org/) (v18 ou superior) e npm
-* [.NET SDK 10](https://dotnet.microsoft.com/download)
+* [Node.js](https://nodejs.org/) (v18 ou superior) e npm — ou [Docker](https://docs.docker.com/get-docker/) + Docker Compose
+* [.NET SDK 10](https://dotnet.microsoft.com/download) — apenas se rodar sem Docker
 * Acesso ao banco de dados PostgreSQL (via Supabase ou instância local)
 
 Para instruções detalhadas de execução, consulte o arquivo [`setup.xml`](./setup.xml) na raiz do projeto.
 
 ---
 
-## Execução Local (Resumo)
+## Execução Local (Docker Compose — recomendado)
+
+```bash
+cp .env.development.example .env.development
+# Edite .env.development com connection string, JWT e demais valores
+docker compose up --build
+```
+
+| Serviço | URL |
+|---|---|
+| Frontend | http://localhost:5173 |
+| Backend API | http://localhost:8080 |
+| Swagger | http://localhost:8080/swagger |
+
+Migrations (quando necessário):
+
+```bash
+docker compose run --rm backend dotnet ef database update
+```
+
+---
+
+## Execução Local (manual, sem Docker)
 
 ### Backend
 ```bash
 cd backend
-# Configure as variáveis de conexão (veja setup.xml)
+# Configure variáveis (veja .env.development.example ou setup.xml)
 dotnet restore
 dotnet ef database update
 dotnet run
-# API disponível em: http://localhost:5000
+# API disponível em: http://localhost:8080
 ```
 
 ### Frontend

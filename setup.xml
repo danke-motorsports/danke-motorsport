@@ -231,18 +231,66 @@ VITE_API_URL=http://localhost:5000
 
 
   <!-- ═══════════════════════════════════════════════════════
-       EXECUÇÃO SIMULTÂNEA (DESENVOLVIMENTO LOCAL COMPLETO)
+       DOCKER COMPOSE (DESENVOLVIMENTO LOCAL — RECOMENDADO)
+  ════════════════════════════════════════════════════════════ -->
+  <docker-compose>
+    <descricao>
+      Sobe backend e frontend com um comando, usando um único arquivo
+      de variáveis na raiz do projeto. Não altera deploy de produção
+      (Railway/Vercel continuam com suas próprias configs).
+    </descricao>
+
+    <pre-requisito>Docker e Docker Compose instalados</pre-requisito>
+
+    <passo numero="1" titulo="Criar arquivo de ambiente">
+      <comandos>
+        <comando>cp .env.development.example .env.development</comando>
+      </comandos>
+      <instrucoes>
+        Edite .env.development e preencha ConnectionStrings__DefaultConnection
+        (Supabase session pooler, formato Npgsql), Jwt__Key e demais valores.
+        Nunca commite .env.development.
+      </instrucoes>
+    </passo>
+
+    <passo numero="2" titulo="Subir os serviços">
+      <comandos>
+        <comando>docker compose up --build</comando>
+      </comandos>
+      <urls>
+        <frontend>http://localhost:5173</frontend>
+        <backend>http://localhost:8080</backend>
+        <swagger>http://localhost:8080/swagger</swagger>
+      </urls>
+    </passo>
+
+    <passo numero="3" titulo="Migrations (quando necessário)">
+      <comandos>
+        <comando>docker compose run --rm backend dotnet ef database update</comando>
+      </comandos>
+    </passo>
+
+    <aviso>
+      Por padrão o .env.development.example aponta para o Supabase de produção.
+      Edições locais afetam dados reais — use com cuidado.
+    </aviso>
+  </docker-compose>
+
+
+  <!-- ═══════════════════════════════════════════════════════
+       EXECUÇÃO SIMULTÂNEA (DESENVOLVIMENTO LOCAL — MANUAL)
   ════════════════════════════════════════════════════════════ -->
   <execucao-completa>
     <descricao>
-      Para rodar o projeto completo localmente, abra dois terminais
-      e execute os comandos abaixo simultaneamente.
+      Alternativa sem Docker: abra dois terminais e execute os comandos
+      abaixo simultaneamente. Configure backend/appsettings.Development.json
+      ou variáveis de ambiente equivalentes ao .env.development.
     </descricao>
 
     <terminal id="1" titulo="Terminal 1 — Backend">
       <comando diretorio="./backend">dotnet watch</comando>
-      <url>http://localhost:5000</url>
-      <swagger>http://localhost:5000/swagger</swagger>
+      <url>http://localhost:8080</url>
+      <swagger>http://localhost:8080/swagger</swagger>
     </terminal>
 
     <terminal id="2" titulo="Terminal 2 — Frontend">
