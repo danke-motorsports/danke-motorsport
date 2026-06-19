@@ -13,7 +13,7 @@
  * Acessível apenas por rotas protegidas com `allowedRoles={["Cliente"]}`.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
 import DashboardUserMenu from '../components/DashboardUserMenu';
@@ -33,6 +33,7 @@ function ClientDashboard() {
   
   const [tipoRevisao, setTipoRevisao] = useState(1); // 1 = Bronze, 2 = Silver, 3 = Gold
   const [datAgendamento, setDatAgendamento] = useState('');
+  const [observacaoCliente, setObservacaoCliente] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
 
@@ -72,11 +73,13 @@ function ClientDashboard() {
     try {
       await api.post('/danke/revisao', {
         tipoRevisao: parseInt(tipoRevisao),
-        datAgendamento: new Date(datAgendamento).toISOString()
+        datAgendamento: new Date(datAgendamento).toISOString(),
+        observacaoCliente: observacaoCliente || null
       });
 
       setMessage({ text: 'Revisão solicitada com sucesso!', type: 'success' });
       setDatAgendamento('');
+      setObservacaoCliente('');
       carregarRevisoes();
     } catch (error) {
       console.error('Erro ao solicitar revisão:', error);
@@ -210,6 +213,18 @@ function ClientDashboard() {
               />
             </div>
 
+            <div className="form-group">
+              <label htmlFor="observacaoCliente">Observações ou Sintomas (Opcional):</label>
+              <textarea 
+                id="observacaoCliente"
+                placeholder="Ex: Barulho na suspensão, luz da injeção acesa..."
+                value={observacaoCliente}
+                onChange={(e) => setObservacaoCliente(e.target.value)}
+                className="observation-textarea"
+                rows="3"
+              />
+            </div>
+
             <button type="submit" className="submit-button" disabled={submitting}>
               {submitting ? 'Enviando...' : 'Confirmar Agendamento'}
             </button>
@@ -244,19 +259,39 @@ function ClientDashboard() {
                   {revisoes.map((rev) => {
                     const tier = getTipoLabel(rev.tipoRevisao);
                     return (
-                      <tr key={rev.idRevisao}>
-                        <td className="col-id">#{rev.idRevisao}</td>
-                        <td>
-                          <span className={`tier-badge ${tier.class}`}>{tier.name}</span>
-                        </td>
-                        <td>{formatarData(rev.datAgendamento)}</td>
-                        <td>
-                          <span className={`status-badge ${getStatusLabel(rev.statusRevisao)}`}>
-                            {rev.statusRevisao}
-                          </span>
-                        </td>
-                        <td>{rev.statusRevisao === 'Concluído' ? formatarData(rev.datFinalizacao) : '-'}</td>
-                      </tr>
+                      <Fragment key={rev.idRevisao}>
+                        <tr>
+                          <td className="col-id">#{rev.idRevisao}</td>
+                          <td>
+                            <span className={`tier-badge ${tier.class}`}>{tier.name}</span>
+                          </td>
+                          <td>{formatarData(rev.datAgendamento)}</td>
+                          <td>
+                            <span className={`status-badge ${getStatusLabel(rev.statusRevisao)}`}>
+                              {rev.statusRevisao}
+                            </span>
+                          </td>
+                          <td>{rev.statusRevisao === 'Concluído' ? formatarData(rev.datFinalizacao) : '-'}</td>
+                        </tr>
+                        {(rev.observacaoCliente || rev.feedbackMecanico) && (
+                          <tr className="detail-row">
+                            <td colSpan="5">
+                              <div className="detail-container">
+                                {rev.observacaoCliente && (
+                                  <div className="detail-block">
+                                    <strong>Minha Observação:</strong> "{rev.observacaoCliente}"
+                                  </div>
+                                )}
+                                {rev.feedbackMecanico && (
+                                  <div className="detail-block mechanic-feedback">
+                                    <strong>Feedback do Mecânico:</strong> "{rev.feedbackMecanico}"
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </Fragment>
                     );
                   })}
                 </tbody>

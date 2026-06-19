@@ -43,12 +43,10 @@ public class Revisao {
         [ForeignKey("IdFuncionario")]
         public Funcionario? Funcionario { get; set; }
 
+        [Column("observacao_cliente")]
+        public string? ObservacaoCliente { get; set; }
 
-
-
-        
+        [Column("feedback_mecanico")]
+        public string? FeedbackMecanico { get; set; }
     }
-    
-    
-    
-    }
+}

@@ -30,6 +30,7 @@ function EmployeeDashboard() {
   const [minhasRevisoes, setMinhasRevisoes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
+  const [feedbacks, setFeedbacks] = useState({});
 
   useEffect(() => {
     carregarDados();
@@ -100,8 +101,10 @@ function EmployeeDashboard() {
   const handleCompleteRevision = async (idRevisao) => {
     try {
       setErrorMsg('');
+      const feedback = feedbacks[idRevisao] || '';
       await api.patch(`/danke/revisao/${idRevisao}`, {
-        statusRevisao: 'Concluído'
+        statusRevisao: 'Concluído',
+        feedbackMecanico: feedback
       });
       await carregarDados();
     } catch (error) {
@@ -200,6 +203,11 @@ function EmployeeDashboard() {
                           <FaCalendarAlt className="card-icon" /> 
                           <strong>Agendamento:</strong> {formatarData(rev.datAgendamento)}
                         </p>
+                        {rev.observacaoCliente && (
+                          <div className="card-notes client-notes">
+                            <strong>Obs. do Cliente:</strong> "{rev.observacaoCliente}"
+                          </div>
+                        )}
                       </div>
 
                       <div className="card-actions">
@@ -255,6 +263,21 @@ function EmployeeDashboard() {
                           <FaCalendarAlt className="card-icon" /> 
                           <strong>Agendamento:</strong> {formatarData(rev.datAgendamento)}
                         </p>
+                        {rev.observacaoCliente && (
+                          <div className="card-notes client-notes">
+                            <strong>Obs. do Cliente:</strong> "{rev.observacaoCliente}"
+                          </div>
+                        )}
+                        <div className="feedback-input-group">
+                          <label htmlFor={`feedback-${rev.idRevisao}`}>Feedback / Diagnóstico:</label>
+                          <textarea
+                            id={`feedback-${rev.idRevisao}`}
+                            placeholder="Descreva o serviço ou diagnóstico..."
+                            value={feedbacks[rev.idRevisao] || ''}
+                            onChange={(e) => setFeedbacks({ ...feedbacks, [rev.idRevisao]: e.target.value })}
+                            className="feedback-textarea"
+                          />
+                        </div>
                       </div>
 
                       <div className="card-actions">
@@ -303,6 +326,16 @@ function EmployeeDashboard() {
                         <p className="card-detail concluded-date">
                           <strong>Concluído em:</strong> {formatarData(rev.datFinalizacao)}
                         </p>
+                        {rev.observacaoCliente && (
+                          <div className="card-notes client-notes">
+                            <strong>Obs. do Cliente:</strong> "{rev.observacaoCliente}"
+                          </div>
+                        )}
+                        {rev.feedbackMecanico && (
+                          <div className="card-notes mechanic-feedback-note">
+                            <strong>Feedback do Mecânico:</strong> "{rev.feedbackMecanico}"
+                          </div>
+                        )}
                       </div>
                     </div>
                   );

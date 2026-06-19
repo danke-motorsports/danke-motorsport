@@ -205,7 +205,8 @@ public class RevisaoController : ControllerBase
             DatAgendamento = request.DatAgendamento.ToUniversalTime(),
             DatFinalizacao = request.DatAgendamento.ToUniversalTime(), // placeholder; atualizado ao concluir
             IdCliente = clienteId,
-            IdFuncionario = null // Inicialmente não atrelado a funcionário
+            IdFuncionario = null, // Inicialmente não atrelado a funcionário
+            ObservacaoCliente = request.ObservacaoCliente
         };
 
         _context.Revisoes.Add(novaRevisao);
@@ -264,6 +265,11 @@ public class RevisaoController : ControllerBase
         }
 
         revisao.StatusRevisao = request.StatusRevisao;
+
+        if (request.FeedbackMecanico != null)
+        {
+            revisao.FeedbackMecanico = request.FeedbackMecanico;
+        }
 
         // Se o status for concluído, define a data de finalização
         if (request.StatusRevisao == "Concluído")
@@ -333,6 +339,8 @@ public class RevisaoController : ControllerBase
         revisao.DatAgendamento = revisaoAtualizada.DatAgendamento.ToUniversalTime();
         revisao.IdCliente = revisaoAtualizada.IdCliente;
         revisao.IdFuncionario = revisaoAtualizada.IdFuncionario == 0 ? null : revisaoAtualizada.IdFuncionario;
+        revisao.ObservacaoCliente = revisaoAtualizada.ObservacaoCliente;
+        revisao.FeedbackMecanico = revisaoAtualizada.FeedbackMecanico;
 
         if (revisao.StatusRevisao == "Concluído")
         {
@@ -359,6 +367,9 @@ public class CriarRevisaoRequest
 
     /// <summary>Data e hora desejada para o agendamento (será convertida para UTC).</summary>
     public DateTime DatAgendamento { get; set; }
+
+    /// <summary>Observação enviada pelo cliente.</summary>
+    public string? ObservacaoCliente { get; set; }
 }
 
 /// <summary>
@@ -368,4 +379,7 @@ public class AtualizarStatusRequest
 {
     /// <summary>Novo status da revisão. Valores aceitos: "Pendente", "Em Andamento", "Concluído".</summary>
     public string StatusRevisao { get; set; } = string.Empty;
+
+    /// <summary>Feedback/observações fornecidas pelo mecânico.</summary>
+    public string? FeedbackMecanico { get; set; }
 }
