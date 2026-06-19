@@ -83,25 +83,31 @@ public class ClientesController : ControllerBase
     /// 400 BadRequest se os dados forem inválidos.
     /// </returns>
     [HttpPost]
-    public IActionResult CriarCliente([FromBody] Cliente novoCliente)
+    public IActionResult CriarCliente([FromBody] CriarClienteRequest request)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
         // Verifica se o e-mail já está em uso por outro cliente ou funcionário
-        if (_context.Clientes.Any(c => c.Email == novoCliente.Email) ||
-            _context.Funcionarios.Any(f => f.Email == novoCliente.Email))
+        if (_context.Clientes.Any(c => c.Email == request.Email) ||
+            _context.Funcionarios.Any(f => f.Email == request.Email))
         {
             return Conflict(new { message = "Este e-mail já está em uso." });
         }
 
-        // Criptografa a senha antes de salvar no banco de dados
-        novoCliente.Senha = BCrypt.Net.BCrypt.HashPassword(novoCliente.Senha);
+        var novoCliente = new Cliente
+        {
+            Nome = request.Nome,
+            Email = request.Email,
+            Cpf = request.Cpf,
+            Telefone = request.Telefone,
+            PlacaVeiculo = request.PlacaVeiculo ?? string.Empty,
+            Senha = BCrypt.Net.BCrypt.HashPassword(request.Senha)
+        };
 
         _context.Clientes.Add(novoCliente);
         _context.SaveChanges();
 
-        // Remove o hash da senha do retorno por segurança
         novoCliente.Senha = string.Empty;
 
         return CreatedAtAction(nameof(ObterCliente), new { id = novoCliente.Id }, novoCliente);
@@ -207,4 +213,29 @@ public class AtualizarClienteRequest
     public string PlacaVeiculo { get; set; } = string.Empty;
 
     public string? Senha { get; set; }
+}
+
+/// <summary>
+/// DTO para cadastro de novo cliente. Endpoint público de registro.
+/// </summary>
+public class CriarClienteRequest
+{
+    [Required]
+    public string Nome { get; set; } = string.Empty;
+
+    [Required]
+    [EmailAddress]
+    public string Email { get; set; } = string.Empty;
+
+    [Required]
+    public string Cpf { get; set; } = string.Empty;
+
+    [Required]
+    public string Telefone { get; set; } = string.Empty;
+
+    public string? PlacaVeiculo { get; set; }
+
+    [Required]
+    [MinLength(6)]
+    public string Senha { get; set; } = string.Empty;
 }

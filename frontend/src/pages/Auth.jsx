@@ -78,7 +78,14 @@ function Auth() {
             }
         } catch (err) {
             console.error(err)
-            setError(err.response?.data?.message || err.response?.data?.Senha?.[0] || "Erro ao processar requisição. Verifique seus dados.")
+            const apiMessage = err.response?.data?.message
+            const validationMessage = err.response?.data?.errors
+                ? Object.values(err.response.data.errors).flat()[0]
+                : err.response?.data?.Senha?.[0]
+            const networkMessage = !err.response
+                ? 'Não foi possível conectar à API. Verifique se o backend está rodando e se VITE_API_URL está correto.'
+                : null
+            setError(apiMessage || validationMessage || networkMessage || 'Erro ao processar requisição. Verifique seus dados.')
         } finally {
             setLoading(false)
         }

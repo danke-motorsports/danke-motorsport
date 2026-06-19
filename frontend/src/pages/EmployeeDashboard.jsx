@@ -101,10 +101,10 @@ function EmployeeDashboard() {
   const handleCompleteRevision = async (idRevisao) => {
     try {
       setErrorMsg('');
-      const feedback = feedbacks[idRevisao] || '';
+      const feedback = (feedbacks[idRevisao] || '').trim();
       await api.patch(`/danke/revisao/${idRevisao}`, {
         statusRevisao: 'Concluído',
-        feedbackMecanico: feedback
+        feedbackMecanico: feedback || null
       });
       await carregarDados();
     } catch (error) {
@@ -269,7 +269,7 @@ function EmployeeDashboard() {
                           </div>
                         )}
                         <div className="feedback-input-group">
-                          <label htmlFor={`feedback-${rev.idRevisao}`}>Feedback / Diagnóstico:</label>
+                          <label htmlFor={`feedback-${rev.idRevisao}`}>Feedback / Diagnóstico (opcional):</label>
                           <textarea
                             id={`feedback-${rev.idRevisao}`}
                             placeholder="Descreva o serviço ou diagnóstico..."

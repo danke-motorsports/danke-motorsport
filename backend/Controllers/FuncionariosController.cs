@@ -76,25 +76,30 @@ public class FuncionariosController : ControllerBase
     /// </returns>
     [HttpPost]
     [Authorize(Roles = "Funcionario,Admin")]
-    public IActionResult CriarFuncionario([FromBody] Funcionario novoFuncionario)
+    public IActionResult CriarFuncionario([FromBody] CriarFuncionarioRequest request)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
         // Verifica se o e-mail já está em uso por outro cliente ou funcionário
-        if (_context.Clientes.Any(c => c.Email == novoFuncionario.Email) ||
-            _context.Funcionarios.Any(f => f.Email == novoFuncionario.Email))
+        if (_context.Clientes.Any(c => c.Email == request.Email) ||
+            _context.Funcionarios.Any(f => f.Email == request.Email))
         {
             return Conflict(new { message = "Este e-mail já está em uso." });
         }
 
-        // Criptografa a senha antes de salvar no banco de dados
-        novoFuncionario.Senha = BCrypt.Net.BCrypt.HashPassword(novoFuncionario.Senha);
+        var novoFuncionario = new Funcionario
+        {
+            NomeFuncionario = request.NomeFuncionario,
+            Email = request.Email,
+            TipoFuncionario = request.TipoFuncionario,
+            Cargo = request.Cargo,
+            Senha = BCrypt.Net.BCrypt.HashPassword(request.Senha)
+        };
 
         _context.Funcionarios.Add(novoFuncionario);
         _context.SaveChanges();
 
-        // Remove o hash da senha do retorno por segurança
         novoFuncionario.Senha = string.Empty;
 
         return CreatedAtAction(nameof(ObterFuncionario), new { id = novoFuncionario.IdFuncionario }, novoFuncionario);
@@ -181,6 +186,29 @@ public class FuncionariosController : ControllerBase
         _context.SaveChanges();
         return NoContent();
     }
+}
+
+/// <summary>
+/// DTO para cadastro de novo funcionário.
+/// </summary>
+public class CriarFuncionarioRequest
+{
+    [Required]
+    public string NomeFuncionario { get; set; } = string.Empty;
+
+    [Required]
+    [EmailAddress]
+    public string Email { get; set; } = string.Empty;
+
+    [Required]
+    [MinLength(6)]
+    public string Senha { get; set; } = string.Empty;
+
+    [Required]
+    public int TipoFuncionario { get; set; }
+
+    [Required]
+    public int Cargo { get; set; }
 }
 
 /// <summary>

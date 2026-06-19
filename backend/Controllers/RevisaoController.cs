@@ -206,7 +206,9 @@ public class RevisaoController : ControllerBase
             DatFinalizacao = request.DatAgendamento.ToUniversalTime(), // placeholder; atualizado ao concluir
             IdCliente = clienteId,
             IdFuncionario = null, // Inicialmente não atrelado a funcionário
-            ObservacaoCliente = request.ObservacaoCliente
+            ObservacaoCliente = string.IsNullOrWhiteSpace(request.ObservacaoCliente)
+                ? null
+                : request.ObservacaoCliente.Trim()
         };
 
         _context.Revisoes.Add(novaRevisao);
@@ -268,7 +270,9 @@ public class RevisaoController : ControllerBase
 
         if (request.FeedbackMecanico != null)
         {
-            revisao.FeedbackMecanico = request.FeedbackMecanico;
+            revisao.FeedbackMecanico = string.IsNullOrWhiteSpace(request.FeedbackMecanico)
+                ? null
+                : request.FeedbackMecanico.Trim();
         }
 
         // Se o status for concluído, define a data de finalização

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
 import DashboardUserMenu from '../components/DashboardUserMenu';
@@ -160,7 +160,9 @@ function AdminDashboard() {
       statusRevisao: rev.statusRevisao,
       datAgendamento: formattedDate,
       idCliente: rev.idCliente,
-      idFuncionario: rev.idFuncionario || 0
+      idFuncionario: rev.idFuncionario || 0,
+      observacaoCliente: rev.observacaoCliente || '',
+      feedbackMecanico: rev.feedbackMecanico || ''
     });
     setModalType('editRevisao');
   };
@@ -205,7 +207,9 @@ function AdminDashboard() {
           statusRevisao: formData.statusRevisao,
           datAgendamento: new Date(formData.datAgendamento).toISOString(),
           idCliente: parseInt(formData.idCliente),
-          idFuncionario: parseInt(formData.idFuncionario) === 0 ? null : parseInt(formData.idFuncionario)
+          idFuncionario: parseInt(formData.idFuncionario) === 0 ? null : parseInt(formData.idFuncionario),
+          observacaoCliente: formData.observacaoCliente?.trim() || null,
+          feedbackMecanico: formData.feedbackMecanico?.trim() || null
         });
         showSuccess('Revisão atualizada com sucesso!');
       }
@@ -355,25 +359,45 @@ function AdminDashboard() {
                       {revisoes.map((rev) => {
                         const tier = getTipoRevisaoLabel(rev.tipoRevisao);
                         return (
-                          <tr key={rev.idRevisao}>
-                            <td className="col-id">#{rev.idRevisao}</td>
-                            <td>{rev.cliente?.nome || `ID Client: ${rev.idCliente}`}</td>
-                            <td><span className="car-plate-badge"><FaCar /> {rev.cliente?.placaVeiculo || 'N/D'}</span></td>
-                            <td><span className={`tier-badge ${tier.class}`}>{tier.name}</span></td>
-                            <td>{formatarData(rev.datAgendamento)}</td>
-                            <td>{rev.funcionario?.nomeFuncionario || <span className="no-assignment">Não Atribuído</span>}</td>
-                            <td>
-                              <span className={`status-badge ${getStatusLabel(rev.statusRevisao)}`}>
-                                {rev.statusRevisao}
-                              </span>
-                            </td>
-                            <td>
-                              <div className="action-buttons">
-                                <button className="btn-action edit" onClick={() => openEditRevisao(rev)} title="Editar"><FaEdit /></button>
-                                <button className="btn-action delete" onClick={() => handleDeleteRevisao(rev.idRevisao)} title="Excluir"><FaTrash /></button>
-                              </div>
-                            </td>
-                          </tr>
+                          <Fragment key={rev.idRevisao}>
+                            <tr>
+                              <td className="col-id">#{rev.idRevisao}</td>
+                              <td>{rev.cliente?.nome || `ID Client: ${rev.idCliente}`}</td>
+                              <td><span className="car-plate-badge"><FaCar /> {rev.cliente?.placaVeiculo || 'N/D'}</span></td>
+                              <td><span className={`tier-badge ${tier.class}`}>{tier.name}</span></td>
+                              <td>{formatarData(rev.datAgendamento)}</td>
+                              <td>{rev.funcionario?.nomeFuncionario || <span className="no-assignment">Não Atribuído</span>}</td>
+                              <td>
+                                <span className={`status-badge ${getStatusLabel(rev.statusRevisao)}`}>
+                                  {rev.statusRevisao}
+                                </span>
+                              </td>
+                              <td>
+                                <div className="action-buttons">
+                                  <button className="btn-action edit" onClick={() => openEditRevisao(rev)} title="Editar"><FaEdit /></button>
+                                  <button className="btn-action delete" onClick={() => handleDeleteRevisao(rev.idRevisao)} title="Excluir"><FaTrash /></button>
+                                </div>
+                              </td>
+                            </tr>
+                            {(rev.observacaoCliente || rev.feedbackMecanico) && (
+                              <tr className="detail-row">
+                                <td colSpan="8">
+                                  <div className="detail-container">
+                                    {rev.observacaoCliente && (
+                                      <div className="detail-block">
+                                        <strong>Obs. do Cliente:</strong> "{rev.observacaoCliente}"
+                                      </div>
+                                    )}
+                                    {rev.feedbackMecanico && (
+                                      <div className="detail-block mechanic-feedback">
+                                        <strong>Feedback do Mecânico:</strong> "{rev.feedbackMecanico}"
+                                      </div>
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                          </Fragment>
                         );
                       })}
                     </tbody>
@@ -694,6 +718,28 @@ function AdminDashboard() {
                         <option key={f.idFuncionario} value={f.idFuncionario}>{f.nomeFuncionario} ({f.tipoFuncionario === 1 ? 'Admin' : 'Operador'})</option>
                       ))}
                     </select>
+                  </div>
+                  <div className="modal-form-group">
+                    <label>Observação do Cliente (opcional)</label>
+                    <textarea
+                      name="observacaoCliente"
+                      value={formData.observacaoCliente || ''}
+                      onChange={handleInputChange}
+                      rows="3"
+                      placeholder="Sintomas ou observações informadas pelo cliente..."
+                      className="modal-textarea"
+                    />
+                  </div>
+                  <div className="modal-form-group">
+                    <label>Feedback do Mecânico (opcional)</label>
+                    <textarea
+                      name="feedbackMecanico"
+                      value={formData.feedbackMecanico || ''}
+                      onChange={handleInputChange}
+                      rows="3"
+                      placeholder="Diagnóstico ou serviço realizado..."
+                      className="modal-textarea"
+                    />
                   </div>
                 </>
               )}

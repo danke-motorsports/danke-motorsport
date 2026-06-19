@@ -32,7 +32,7 @@ namespace backend.Models
 
         [Required]
         [Column("senha")]
-        [JsonIgnore]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWriting)]
         public string Senha { get; set; } = string.Empty;
 
         [JsonIgnore]
