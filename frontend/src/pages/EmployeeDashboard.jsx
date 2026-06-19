@@ -14,10 +14,10 @@
  */
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
+import DashboardUserMenu from '../components/DashboardUserMenu';
 import './EmployeeDashboard.css';
-import { FaSignOutAlt, FaWrench, FaPlay, FaCheck, FaCar, FaUser, FaPhoneAlt, FaCalendarAlt } from 'react-icons/fa';
+import { FaWrench, FaPlay, FaCheck, FaCar, FaUser, FaPhoneAlt, FaCalendarAlt } from 'react-icons/fa';
 
 /**
  * Componente do dashboard Kanban do funcionário.
@@ -25,9 +25,7 @@ import { FaSignOutAlt, FaWrench, FaPlay, FaCheck, FaCar, FaUser, FaPhoneAlt, FaC
  *
  * @returns {JSX.Element}
  */
-function EmployeeDashboard() {
-  const { user, logout } = useAuth();
-  
+function EmployeeDashboard() {  
   const [pendentes, setPendentes] = useState([]);
   const [minhasRevisoes, setMinhasRevisoes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -150,12 +148,7 @@ function EmployeeDashboard() {
           <FaWrench className="header-icon" />
           <h1>Painel Oficina (Kanban)</h1>
         </div>
-        <div className="user-profile">
-          <span>Operador: <strong>{user?.nome}</strong> (Funcionário)</span>
-          <button className="logout-button" onClick={logout} title="Sair da Conta">
-            <FaSignOutAlt /> Sair
-          </button>
-        </div>
+        <DashboardUserMenu roleLabel="Funcionário" />
       </header>
 
       {errorMsg && (

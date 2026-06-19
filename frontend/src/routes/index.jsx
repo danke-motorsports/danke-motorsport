@@ -4,11 +4,18 @@ import Auth from "../pages/Auth";
 import ClientDashboard from "../pages/ClientDashboard";
 import EmployeeDashboard from "../pages/EmployeeDashboard";
 import AdminDashboard from "../pages/AdminDashboard";
+import Profile from "../pages/Profile";
 import { ProtectedRoute } from "./ProtectedRoute";
 
 const router = createBrowserRouter([
     { path: "/", element: <LandingPage /> },
     { path: "/auth", element: <Auth /> },
+    {
+        element: <ProtectedRoute />,
+        children: [
+            { path: "/perfil", element: <Profile /> }
+        ]
+    },
     {
         element: <ProtectedRoute allowedRoles={["Cliente"]} />,
         children: [

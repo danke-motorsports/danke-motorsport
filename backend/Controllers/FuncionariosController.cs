@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using backend.Data;
 using backend.Models;
+using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 
 namespace backend.Controllers;
@@ -114,7 +115,7 @@ public class FuncionariosController : ControllerBase
     /// </returns>
     [HttpPut("{id}")]
     [Authorize(Roles = "Funcionario,Admin")]
-    public IActionResult AtualizarFuncionario(int id, [FromBody] Funcionario funcionarioAtualizado)
+    public IActionResult AtualizarFuncionario(int id, [FromBody] AtualizarFuncionarioRequest request)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
@@ -129,24 +130,28 @@ public class FuncionariosController : ControllerBase
         if (funcionario == null)
             return NotFound();
 
-        // Verifica se o e-mail mudou e se o novo e-mail já está cadastrado por outro usuário
-        if (funcionario.Email != funcionarioAtualizado.Email)
+        if (funcionario.Email != request.Email)
         {
-            if (_context.Clientes.Any(c => c.Email == funcionarioAtualizado.Email) ||
-                _context.Funcionarios.Any(f => f.Email == funcionarioAtualizado.Email))
+            if (_context.Clientes.Any(c => c.Email == request.Email) ||
+                _context.Funcionarios.Any(f => f.Email == request.Email))
             {
                 return Conflict(new { message = "Este e-mail já está em uso por outro usuário." });
             }
         }
 
-        funcionario.NomeFuncionario = funcionarioAtualizado.NomeFuncionario;
-        funcionario.TipoFuncionario = funcionarioAtualizado.TipoFuncionario;
-        funcionario.Cargo = funcionarioAtualizado.Cargo;
-        funcionario.Email = funcionarioAtualizado.Email;
+        funcionario.NomeFuncionario = request.NomeFuncionario;
+        funcionario.Email = request.Email;
 
-        if (!string.IsNullOrEmpty(funcionarioAtualizado.Senha))
+        // Cargo e tipo só podem ser alterados por admin editando outro funcionário
+        if (role == "Admin" && myId != id && request.TipoFuncionario.HasValue && request.Cargo.HasValue)
         {
-            funcionario.Senha = BCrypt.Net.BCrypt.HashPassword(funcionarioAtualizado.Senha);
+            funcionario.TipoFuncionario = request.TipoFuncionario.Value;
+            funcionario.Cargo = request.Cargo.Value;
+        }
+
+        if (!string.IsNullOrEmpty(request.Senha))
+        {
+            funcionario.Senha = BCrypt.Net.BCrypt.HashPassword(request.Senha);
         }
 
         _context.SaveChanges();
@@ -176,4 +181,23 @@ public class FuncionariosController : ControllerBase
         _context.SaveChanges();
         return NoContent();
     }
+}
+
+/// <summary>
+/// DTO para atualização de funcionário. Senha, cargo e tipo são opcionais.
+/// </summary>
+public class AtualizarFuncionarioRequest
+{
+    [Required]
+    public string NomeFuncionario { get; set; } = string.Empty;
+
+    [Required]
+    [EmailAddress]
+    public string Email { get; set; } = string.Empty;
+
+    public string? Senha { get; set; }
+
+    public int? TipoFuncionario { get; set; }
+
+    public int? Cargo { get; set; }
 }

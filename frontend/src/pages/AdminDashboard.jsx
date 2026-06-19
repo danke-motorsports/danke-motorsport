@@ -1,15 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
+import DashboardUserMenu from '../components/DashboardUserMenu';
 import './AdminDashboard.css';
 import { 
-  FaSignOutAlt, FaWrench, FaPlus, FaTrash, FaEdit, 
+  FaWrench, FaPlus, FaTrash, FaEdit, 
   FaUser, FaUsers, FaBriefcase, FaCalendarAlt, 
   FaCar, FaKey, FaEnvelope, FaPhoneAlt, FaIdCard, FaTimes 
 } from 'react-icons/fa';
 
 function AdminDashboard() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   
   // States para os dados
   const [clientes, setClientes] = useState([]);
@@ -258,12 +259,7 @@ function AdminDashboard() {
           <FaWrench className="header-icon" />
           <h1>Painel Administrativo</h1>
         </div>
-        <div className="user-profile">
-          <span>Olá, <strong>{user?.nome}</strong> (Administrador)</span>
-          <button className="logout-button" onClick={logout} title="Sair da Conta">
-            <FaSignOutAlt /> Sair
-          </button>
-        </div>
+        <DashboardUserMenu roleLabel="Administrador" />
       </header>
 
       {/* ALERTAS */}

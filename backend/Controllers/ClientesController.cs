@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using backend.Data;
 using backend.Models;
+using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 
 namespace backend.Controllers;
@@ -121,7 +122,7 @@ public class ClientesController : ControllerBase
     /// </returns>
     [HttpPut("{id}")]
     [Authorize]
-    public IActionResult AtualizarCliente(int id, [FromBody] Cliente clienteAtualizado)
+    public IActionResult AtualizarCliente(int id, [FromBody] AtualizarClienteRequest request)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
@@ -136,21 +137,25 @@ public class ClientesController : ControllerBase
         if (cliente == null)
             return NotFound();
 
-        // Verifica se o e-mail mudou e se o novo e-mail já está cadastrado por outro usuário
-        if (cliente.Email != clienteAtualizado.Email)
+        if (cliente.Email != request.Email)
         {
-            if (_context.Clientes.Any(c => c.Email == clienteAtualizado.Email) ||
-                _context.Funcionarios.Any(f => f.Email == clienteAtualizado.Email))
+            if (_context.Clientes.Any(c => c.Email == request.Email) ||
+                _context.Funcionarios.Any(f => f.Email == request.Email))
             {
                 return Conflict(new { message = "Este e-mail já está em uso por outro usuário." });
             }
         }
 
-        cliente.Nome = clienteAtualizado.Nome;
-        cliente.Email = clienteAtualizado.Email;
-        cliente.Cpf = clienteAtualizado.Cpf;
-        cliente.Telefone = clienteAtualizado.Telefone;
-        cliente.PlacaVeiculo = clienteAtualizado.PlacaVeiculo;
+        cliente.Nome = request.Nome;
+        cliente.Email = request.Email;
+        cliente.Cpf = request.Cpf;
+        cliente.Telefone = request.Telefone;
+        cliente.PlacaVeiculo = request.PlacaVeiculo;
+
+        if (!string.IsNullOrEmpty(request.Senha))
+        {
+            cliente.Senha = BCrypt.Net.BCrypt.HashPassword(request.Senha);
+        }
 
         _context.SaveChanges();
 
@@ -179,4 +184,27 @@ public class ClientesController : ControllerBase
         _context.SaveChanges();
         return NoContent();
     }
+}
+
+/// <summary>
+/// DTO para atualização de cliente. Senha é opcional — omita para manter a atual.
+/// </summary>
+public class AtualizarClienteRequest
+{
+    [Required]
+    public string Nome { get; set; } = string.Empty;
+
+    [Required]
+    [EmailAddress]
+    public string Email { get; set; } = string.Empty;
+
+    [Required]
+    public string Cpf { get; set; } = string.Empty;
+
+    [Required]
+    public string Telefone { get; set; } = string.Empty;
+
+    public string PlacaVeiculo { get; set; } = string.Empty;
+
+    public string? Senha { get; set; }
 }

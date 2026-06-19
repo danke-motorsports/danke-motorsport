@@ -16,8 +16,9 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
+import DashboardUserMenu from '../components/DashboardUserMenu';
 import './ClientDashboard.css';
-import { FaSignOutAlt, FaPlus, FaClock, FaHistory, FaWrench } from 'react-icons/fa';
+import { FaPlus, FaClock, FaHistory, FaWrench } from 'react-icons/fa';
 
 /**
  * Componente do dashboard do cliente.
@@ -26,7 +27,7 @@ import { FaSignOutAlt, FaPlus, FaClock, FaHistory, FaWrench } from 'react-icons/
  * @returns {JSX.Element}
  */
 function ClientDashboard() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const [revisoes, setRevisoes] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
   
@@ -134,12 +135,7 @@ function ClientDashboard() {
           <FaWrench className="header-icon" />
           <h1>Danke Motorsport</h1>
         </div>
-        <div className="user-profile">
-          <span>Bem-vindo, <strong>{user?.nome}</strong> (Cliente)</span>
-          <button className="logout-button" onClick={logout} title="Sair da Conta">
-            <FaSignOutAlt /> Sair
-          </button>
-        </div>
+        <DashboardUserMenu roleLabel="Cliente" />
       </header>
 
       <main className="dashboard-main">
