@@ -6,10 +6,16 @@ import EmployeeDashboard from "../pages/EmployeeDashboard";
 import AdminDashboard from "../pages/AdminDashboard";
 import Profile from "../pages/Profile";
 import { ProtectedRoute } from "./ProtectedRoute";
+import { GuestRoute } from "./GuestRoute";
 
 const router = createBrowserRouter([
-    { path: "/", element: <LandingPage /> },
-    { path: "/auth", element: <Auth /> },
+    {
+        element: <GuestRoute />,
+        children: [
+            { path: "/", element: <LandingPage /> },
+            { path: "/auth", element: <Auth /> },
+        ],
+    },
     {
         element: <ProtectedRoute />,
         children: [

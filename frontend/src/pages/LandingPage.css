@@ -1,28 +1,57 @@
 .container-landing {
     display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    justify-content: center;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
     height: calc(100vh - 80px);
+    padding: 0 4%;
     color: var(--text-primary);
-    background-image: 
-        linear-gradient(to right, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.6) 40%, transparent 85%),
-        url(/images/mercedes.png);
-    background-repeat: no-repeat;
-    background-size: cover, cover; 
-    background-position: center, 240px center; 
+    background-color: #1B1B1B;
 }
-
 
 .conteudo-landing {
     display: flex;
     flex-direction: column;
     justify-content: center;
-    align-self: flex-start;
-    max-width: 45vw;
-    margin-left: 4%;
+    flex: 1;
     gap: 20px;
+}
 
+.landing-map-section {
+    flex: 1;
+    position: relative;
+    width: 100%;
+    max-height: calc(100vh - 80px - 2rem);
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    border-radius: 12px;
+}
+
+.landing-map-iframe {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    display: block;
+}
+
+.landing-map-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1;
+    padding: 14px 16px;
+    background: rgba(27, 27, 27, 0.85);
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-align: center;
+}
+
+.landing-map-overlay p {
+    margin: 0;
 }
 
 .texto-landing {
@@ -45,7 +74,6 @@
     width: 220px;
     letter-spacing: 3px;
     cursor: pointer;
-
 }
 
 .btn-agendar {
@@ -64,7 +92,7 @@
     right: 0;
     bottom: 0;
     background-color: var(--accent-red);
-    filter: blur(10px); 
+    filter: blur(10px);
     opacity: 0.6;
     z-index: -1;
     transition: opacity 0.3s ease, filter 0.3s ease;
@@ -78,6 +106,7 @@
     background: transparent;
     border: solid 1px rgba(245, 245, 245, 0.48);
     transition: transform 0.3s ease;
+    position: relative;
 }
 
 .btn-servicos::after {
@@ -87,30 +116,37 @@
     left: 0;
     right: 0;
     bottom: 0;
-    filter: blur(20px); 
+    filter: blur(20px);
     opacity: 0.6;
     z-index: -1;
 }
 
 @media (max-width: 768px) {
     .container-landing {
-        background-image: 
-            linear-gradient(to bottom, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.7) 100%),
-            url(/images/mercedes.png);
-        background-position: center, center;
+        flex-direction: column;
+        height: auto;
+        min-height: calc(100vh - 80px);
+        padding: 2rem 5%;
         align-items: center;
         text-align: center;
     }
 
     .conteudo-landing {
-        max-width: 90vw;
-        margin-left: 0;
+        order: 1;
+        max-width: 100%;
         align-items: center;
     }
 
+    .landing-map-section {
+        order: 2;
+        width: 100%;
+        max-height: none;
+        aspect-ratio: 4 / 3;
+    }
+
     .texto-landing {
-        font-size: 32px;
-        letter-spacing: -2px;
+        font-size: 24px;
+        letter-spacing: -1px;
     }
 
     .subtexto-landing {

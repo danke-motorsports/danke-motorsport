@@ -7,8 +7,8 @@
  * Acessível por qualquer visitante — não requer autenticação.
  */
 
-import Navbar from '../components/Navbar'
-import './LandingPage.css'
+import Navbar from "../components/Navbar";
+import "./LandingPage.css";
 
 /**
  * Componente da landing page.
@@ -27,23 +27,29 @@ function LandingPage() {
           </div>
           <div className="subtexto-landing">
             <p>
-              A oficina mecânica especializada em veículos de alto padrão e motocicletas premium da região de Palhoça/São José, SC.
+              A oficina mecânica especializada em veículos de alto padrão e
+              motocicletas premium da região de Palhoça/São José, SC.
             </p>
           </div>
           <div className="btns-landing">
-            <button className='btn-agendar'>
-              AGENDAR AGORA
-            </button>
-            <button className="btn-servicos">
-              NOSSOS SERVIÇOS
-            </button>
+            <button className="btn-agendar">AGENDAR AGORA</button>
+            <button className="btn-servicos">NOSSOS SERVIÇOS</button>
           </div>
         </div>
 
-
+        <div className="landing-map-section">
+          <iframe
+            className="landing-map-iframe"
+            title="Localização Danke Motorsport"
+            src="https://maps.google.com/maps?q=Danke+Motorsport,-27.6116937,-48.6540768&hl=pt-BR&z=17&output=embed"
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+            allowFullScreen
+          />
+        </div>
       </div>
     </div>
-  )
+  );
 }
 
-export default LandingPage
+export default LandingPage;

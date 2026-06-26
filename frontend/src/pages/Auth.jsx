@@ -4,6 +4,7 @@ import { IMaskInput } from 'react-imask'
 import toast from 'react-hot-toast'
 import { useAuth } from '../contexts/AuthContext'
 import api from '../services/api'
+import { getDashboardPath } from '../utils/authRoutes'
 import './Auth.css'
 import { FaIdBadge, FaLock, FaPhoneAlt, FaRegEye, FaRegEyeSlash, FaUser } from "react-icons/fa";
 import { MdEmail } from "react-icons/md";
@@ -37,13 +38,7 @@ function Auth() {
     }
 
     const navigateByRole = (loggedUser) => {
-        if (loggedUser.role === "Cliente") {
-            navigate('/client-dashboard')
-        } else if (loggedUser.role === "Funcionario") {
-            navigate('/employee-dashboard')
-        } else if (loggedUser.role === "Admin") {
-            navigate('/admin-dashboard')
-        }
+        navigate(getDashboardPath(loggedUser.role))
     }
 
     const handleSubmit = async (e) => {

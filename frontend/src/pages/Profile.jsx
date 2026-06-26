@@ -4,9 +4,9 @@ import { IMaskInput } from 'react-imask';
 import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
-import DashboardUserMenu from '../components/DashboardUserMenu';
+import Navbar from '../components/Navbar';
 import {
-  FaWrench, FaUser, FaEnvelope, FaIdCard, FaPhoneAlt, FaCar,
+  FaUser, FaEnvelope, FaIdCard, FaPhoneAlt, FaCar,
   FaKey, FaBriefcase, FaArrowLeft, FaRegEye, FaRegEyeSlash
 } from 'react-icons/fa';
 import './Profile.css';
@@ -17,17 +17,7 @@ const CARGO_LABELS = {
   3: 'Gerente',
 };
 
-function getDashboardPath(role) {
-  if (role === 'Cliente') return '/client-dashboard';
-  if (role === 'Funcionario') return '/employee-dashboard';
-  return '/admin-dashboard';
-}
-
-function getRoleLabel(role) {
-  if (role === 'Cliente') return 'Cliente';
-  if (role === 'Funcionario') return 'Funcionário';
-  return 'Administrador';
-}
+import { getDashboardPath } from '../utils/authRoutes';
 
 function Profile() {
   const { user, updateUser } = useAuth();
@@ -159,13 +149,7 @@ function Profile() {
 
   return (
     <div className="profile-page">
-      <header className="dashboard-header profile-header">
-        <div className="logo-container">
-          <FaWrench className="header-icon" />
-          <h1>Meu Perfil</h1>
-        </div>
-        <DashboardUserMenu roleLabel={getRoleLabel(user.role)} />
-      </header>
+      <Navbar variant="dashboard" title="Meu Perfil" iconTheme="profile" />
 
       <main className="profile-main">
         <Link to={getDashboardPath(user.role)} className="profile-back-link">

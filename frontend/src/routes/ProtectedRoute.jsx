@@ -9,6 +9,7 @@
 
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { getDashboardPath } from '../utils/authRoutes';
 
 /**
  * Componente de rota protegida com suporte a controle de acesso por role.
@@ -60,7 +61,7 @@ export function ProtectedRoute({ allowedRoles }) {
 
   // Se a rota tem restrição de perfil (role) e o usuário não possui a permissão
   if (allowedRoles && !allowedRoles.includes(user.role)) {
-    return <Navigate to="/" replace />;
+    return <Navigate to={getDashboardPath(user.role)} replace />;
   }
 
   // Renderiza a rota filha

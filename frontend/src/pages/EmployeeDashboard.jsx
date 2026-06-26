@@ -15,9 +15,9 @@
 
 import { useState, useEffect } from 'react';
 import api from '../services/api';
-import DashboardUserMenu from '../components/DashboardUserMenu';
+import Navbar from '../components/Navbar';
 import './EmployeeDashboard.css';
-import { FaWrench, FaPlay, FaCheck, FaCar, FaUser, FaPhoneAlt, FaCalendarAlt } from 'react-icons/fa';
+import { FaPlay, FaCheck, FaCar, FaUser, FaPhoneAlt, FaCalendarAlt } from 'react-icons/fa';
 
 /**
  * Componente do dashboard Kanban do funcionário.
@@ -146,13 +146,7 @@ function EmployeeDashboard() {
 
   return (
     <div className="employee-dashboard-container">
-      <header className="dashboard-header">
-        <div className="logo-container">
-          <FaWrench className="header-icon" />
-          <h1>Painel Oficina (Kanban)</h1>
-        </div>
-        <DashboardUserMenu roleLabel="Funcionário" />
-      </header>
+      <Navbar variant="dashboard" title="Painel Oficina (Kanban)" roleLabel="Funcionário" iconTheme="employee" />
 
       {errorMsg && (
         <div className="kanban-error-alert">

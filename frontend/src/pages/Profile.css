@@ -10,39 +10,6 @@
   font-family: 'Outfit', sans-serif;
 }
 
-.profile-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.25rem 2.5rem;
-  background: rgba(17, 20, 28, 0.85);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-
-.profile-header .logo-container {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.profile-header .header-icon {
-  font-size: 1.5rem;
-  color: #dc2626;
-}
-
-.profile-header h1 {
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin: 0;
-  background: linear-gradient(135deg, #ffffff 30%, #a1a1aa 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
 .profile-main {
   max-width: 640px;
   margin: 0 auto;
@@ -242,13 +209,6 @@
 }
 
 @media (max-width: 768px) {
-  .profile-header {
-    padding: 1rem 1.25rem;
-    flex-direction: column;
-    gap: 1rem;
-    align-items: stretch;
-  }
-
   .profile-card {
     padding: 1.5rem;
   }

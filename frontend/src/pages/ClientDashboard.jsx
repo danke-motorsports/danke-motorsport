@@ -16,9 +16,9 @@
 import { useState, useEffect, Fragment } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
-import DashboardUserMenu from '../components/DashboardUserMenu';
+import Navbar from '../components/Navbar';
 import './ClientDashboard.css';
-import { FaPlus, FaClock, FaHistory, FaWrench } from 'react-icons/fa';
+import { FaPlus, FaClock, FaHistory } from 'react-icons/fa';
 
 /**
  * Componente do dashboard do cliente.
@@ -133,13 +133,7 @@ function ClientDashboard() {
 
   return (
     <div className="client-dashboard-container">
-      <header className="dashboard-header">
-        <div className="logo-container">
-          <FaWrench className="header-icon" />
-          <h1>Danke Motorsport</h1>
-        </div>
-        <DashboardUserMenu roleLabel="Cliente" />
-      </header>
+      <Navbar variant="dashboard" title="Danke Motorsport" roleLabel="Cliente" iconTheme="client" />
 
       <main className="dashboard-main">
         {/* Formulário de solicitação de revisão */}

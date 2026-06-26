@@ -1,10 +1,10 @@
 import { useState, useEffect, Fragment } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
-import DashboardUserMenu from '../components/DashboardUserMenu';
+import Navbar from '../components/Navbar';
 import './AdminDashboard.css';
 import { 
-  FaWrench, FaPlus, FaTrash, FaEdit, 
+  FaPlus, FaTrash, FaEdit, 
   FaUser, FaUsers, FaBriefcase, FaCalendarAlt, 
   FaCar, FaKey, FaEnvelope, FaPhoneAlt, FaIdCard, FaTimes 
 } from 'react-icons/fa';
@@ -258,13 +258,7 @@ function AdminDashboard() {
   return (
     <div className="admin-dashboard-container">
       {/* HEADER */}
-      <header className="dashboard-header">
-        <div className="logo-container">
-          <FaWrench className="header-icon" />
-          <h1>Painel Administrativo</h1>
-        </div>
-        <DashboardUserMenu roleLabel="Administrador" />
-      </header>
+      <Navbar variant="dashboard" title="Painel Administrativo" roleLabel="Administrador" iconTheme="admin" />
 
       {/* ALERTAS */}
       {successMsg && <div className="admin-alert success">{successMsg}</div>}
