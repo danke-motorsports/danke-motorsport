@@ -12,14 +12,15 @@ export function GuestRoute() {
         justifyContent: 'center',
         alignItems: 'center',
         height: '100vh',
-        backgroundColor: '#0a0a0c',
-        color: '#ffffff',
-        fontFamily: 'Inter, sans-serif',
+        backgroundColor: '#1B1B1B',
+        color: '#FFFFFF',
+        fontFamily: 'Inter, Helvetica, Arial, sans-serif',
       }}>
         <div style={{
-          fontSize: '1.5rem',
-          fontWeight: '500',
-          letterSpacing: '1px',
+          fontSize: '13px',
+          fontWeight: '600',
+          letterSpacing: '0.08em',
+          textTransform: 'uppercase',
         }}>
           Carregando...
         </div>
