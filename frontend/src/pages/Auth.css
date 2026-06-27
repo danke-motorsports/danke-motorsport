@@ -11,6 +11,36 @@
     box-sizing: border-box;
 }
 
+.btn-back-landing {
+    position: absolute;
+    top: 2rem;
+    left: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: rgba(255, 255, 255, 0.6);
+    text-decoration: none;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    z-index: 10;
+}
+
+.btn-back-landing:hover {
+    color: var(--accent-red);
+    transition: 0.2s;
+    
+}
+
+@media (max-width: 768px) {
+    .btn-back-landing {
+        top: 1.5rem;
+        left: 1.5rem;
+        font-size: 0.9rem;
+    }
+}
+
 .container-form {
     position: relative;
     z-index: 1;

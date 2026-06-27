@@ -55,8 +55,7 @@ function Navbar({
         </Link>
       </div>
       <div className="container-secoes-navbar">
-        <a href="#servicos">SERVIÇOS</a>
-        <a href="#sobre">SOBRE NÓS</a>
+        <Link to="/sobre">SOBRE NÓS</Link>
       </div>
       <div className="navbar-auth">
         <Link to="/auth">

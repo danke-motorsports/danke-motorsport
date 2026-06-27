@@ -1,6 +1,7 @@
 import { createBrowserRouter } from "react-router-dom"; 
 import LandingPage from "../pages/LandingPage";
 import Auth from "../pages/Auth";
+import AboutUs from "../pages/AboutUs";
 import ClientDashboard from "../pages/ClientDashboard";
 import EmployeeDashboard from "../pages/EmployeeDashboard";
 import AdminDashboard from "../pages/AdminDashboard";
@@ -14,6 +15,7 @@ const router = createBrowserRouter([
         children: [
             { path: "/", element: <LandingPage /> },
             { path: "/auth", element: <Auth /> },
+            { path: "/sobre", element: <AboutUs /> },
         ],
     },
     {

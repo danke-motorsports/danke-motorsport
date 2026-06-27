@@ -80,3 +80,58 @@
     text-align: right;
   }
 }
+
+/* Logout Modal */
+.logout-modal-container {
+  max-width: 400px;
+  text-align: center;
+  padding: 24px;
+  animation: modalFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+}
+
+.logout-modal-header {
+  border-bottom: 1px solid var(--swiss-border);
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: center;
+}
+
+.logout-modal-header h3 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--swiss-text);
+  font-family: 'Space Grotesk', 'Inter', sans-serif;
+}
+
+.logout-modal-body {
+  margin: 24px 0;
+}
+
+.logout-modal-body p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--swiss-text-muted);
+  line-height: 1.5;
+}
+
+.logout-modal-footer {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}

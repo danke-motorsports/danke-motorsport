@@ -8,6 +8,7 @@
  */
 
 import Navbar from "../components/Navbar";
+import { Link } from "react-router-dom";
 import "./LandingPage.css";
 
 /**
@@ -32,8 +33,12 @@ function LandingPage() {
             </p>
           </div>
           <div className="btns-landing">
-            <button className="btn-agendar">AGENDAR AGORA</button>
-            <button className="btn-servicos">NOSSOS SERVIÇOS</button>
+            <Link to="/auth">
+              <button className="btn-agendar">AGENDAR AGORA</button>
+            </Link>
+            <a href="https://instagram.com/dankemotorsport" target="_blank">
+              <button className="btn-servicos">NOSSAS REDES</button>
+            </a>
           </div>
         </div>
 

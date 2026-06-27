@@ -1,12 +1,12 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { IMaskInput } from 'react-imask'
 import toast from 'react-hot-toast'
 import { useAuth } from '../contexts/AuthContext'
 import api from '../services/api'
 import { getDashboardPath } from '../utils/authRoutes'
 import './Auth.css'
-import { FaIdBadge, FaLock, FaPhoneAlt, FaRegEye, FaRegEyeSlash, FaUser } from "react-icons/fa";
+import { FaIdBadge, FaLock, FaPhoneAlt, FaRegEye, FaRegEyeSlash, FaUser, FaArrowLeft } from "react-icons/fa";
 import { MdEmail } from "react-icons/md";
 
 function Auth() {
@@ -48,7 +48,7 @@ function Auth() {
 
         try {
             if (isLogin) {
-                const loggedUser = await login(formData.email, formData.senha)
+                const loggedUser = await login(formData.email.trim(), formData.senha)
                 toast.success(`Bem-vindo, ${loggedUser.nome}!`)
                 navigateByRole(loggedUser)
             } else {
@@ -89,6 +89,9 @@ function Auth() {
     return (
         <div>
             <div className="container-auth">
+                <Link to="/" className="btn-back-landing">
+                    <FaArrowLeft /> Voltar
+                </Link>
                 <div className="container-form">
                     <div className="header-auth">
                         <img
