@@ -1,18 +1,15 @@
-# Documentação Técnica — Danke Motorsport
+# Documentação técnica
 
-Este diretório registra **decisões de projeto**, **arquitetura** e **modelo de dados** do sistema de agendamento da Danke Motorsport.
+Documentação do sistema de agendamento da **Danke Motorsport**, organizada por camada.
 
-## Índice
-
-| Documento | Conteúdo |
+| Arquivo | Assunto |
 |---|---|
-| [Arquitetura](./arquitetura.md) | Visão geral do sistema, fluxos, deploy e ambiente local |
-| [Frontend](./frontend.md) | Decisões da camada React/Vite |
-| [Backend](./backend.md) | Decisões da API .NET, autenticação e regras de negócio |
-| [Banco de Dados](./banco-de-dados.md) | Modelo relacional, constraints e histórico de migrations |
+| [arquitetura.md](./arquitetura.md) | Visão geral, ambientes e deploy |
+| [frontend.md](./frontend.md) | React, rotas, UI e validações no browser |
+| [backend.md](./backend.md) | API .NET, autenticação e regras de negócio |
+| [banco-de-dados.md](./banco-de-dados.md) | Tabelas, relacionamentos e migrations |
 
-## Contexto do projeto
+Entrega acadêmica (descrição, integrantes, links): [README principal](../README.md).  
+Execução local e produção: [setup.xml](../setup.xml).
 
-Sistema web full-stack para centralizar agendamentos de revisões automotivas da **Danke Motorsport** (Palhoça/SC), substituindo o fluxo manual via WhatsApp. O MVP cobre três perfis de usuário — **Cliente**, **Funcionário** e **Admin** — com autenticação JWT e persistência em PostgreSQL (Supabase).
-
-Para instruções de execução e deploy, consulte o [README principal](../README.md) e o [setup.xml](../setup.xml).
+O MVP atende três perfis — **Cliente**, **Funcionário** e **Admin** — com login JWT e dados em PostgreSQL (Supabase).

@@ -1,162 +1,70 @@
-# Frontend — Decisões de Projeto
+# Frontend
 
 ## Stack
 
-| Escolha | Alternativas consideradas | Motivo da decisão |
-|---|---|---|
-| **React 19** | Vue, Angular | Ecossistema maduro; familiaridade da equipe |
-| **Vite** | Create React App, Webpack manual | Dev server rápido; configuração enxuta |
-| **React Router DOM v7** | TanStack Router | Padrão de mercado; guards de rota simples |
-| **Axios** | fetch nativo | Interceptors para JWT; API consistente |
-| **CSS puro** | Tailwind, MUI, Chakra | Identidade visual customizada (Swiss Design + Danke) sem dependência de UI kit |
+React 19, Vite, React Router DOM, Axios, React Hot Toast, React Icons e React IMask. Estilização com **CSS puro** (sem Tailwind ou biblioteca de componentes), para manter o visual alinhado à marca Danke.
 
-## Organização do código
+## Organização
 
 ```
 frontend/src/
-├── components/       # Navbar, DashboardUserMenu (reutilizáveis)
-├── contexts/         # AuthContext (estado global de sessão)
-├── pages/            # Uma página por rota principal
-├── routes/           # Router, ProtectedRoute, GuestRoute
-├── services/         # Instância Axios (api.js)
-├── styles/           # dashboard-swiss.css (design system compartilhado)
-├── utils/            # authRoutes, scheduling (helpers puros)
-└── assets/           # variables.css (tokens de cor globais)
+├── components/     Navbar, menu do usuário
+├── contexts/       AuthContext (sessão)
+├── pages/          Landing, Auth, dashboards, Sobre, Perfil
+├── routes/         Router, ProtectedRoute, GuestRoute
+├── services/       api.js (Axios)
+├── styles/         dashboard-swiss.css
+└── utils/          authRoutes, scheduling
 ```
 
-**Decisão:** não adotar Redux/Zustand. O escopo do MVP cabe em **Context API** (`AuthContext`) + estado local por página (`useState`).
+Estado global limitado ao **AuthContext**; cada página usa `useState` local. Não usamos Redux nem Zustand.
 
-## Design system (Swiss minimal + Danke)
+## Design
 
-Arquivo central: `frontend/src/styles/dashboard-swiss.css`
+Tokens principais em `styles/dashboard-swiss.css`: fundo `#1B1B1B`, accent `#E30613`, bordas `#333333`. Dashboards importam esse arquivo para não repetir estilos.
 
-| Token | Valor | Uso |
-|---|---|---|
-| `--swiss-bg` | `#1B1B1B` | Fundo principal |
-| `--swiss-accent` | `#E30613` | Vermelho Danke (CTAs, destaques) |
-| `--swiss-border` | `#333333` | Bordas e separadores |
-| `--swiss-text-muted` | `#999999` | Labels e texto secundário |
+Planos **Bronze**, **Silver** e **Gold** têm badges com cores distintas (classes `.badge-bronze`, `.badge-silver`, `.badge-gold`). No formulário de agendamento, os cards de plano usam a mesma paleta quando selecionados.
 
-**Decisão:** dashboards compartilham um CSS base importado por cada página (`@import '../styles/dashboard-swiss.css'`), evitando duplicação entre Client, Employee e Admin.
+## Rotas
 
-### Badges de plano (Bronze / Silver / Gold)
-
-Cores leves e distintas para identificação visual rápida:
-
-| Plano | Classe CSS | Cor de destaque |
-|---|---|---|
-| Bronze | `.badge-bronze` | Cobre quente (`#e8a86e`) |
-| Silver | `.badge-silver` | Prata (`#c8ccd0`) |
-| Gold | `.badge-gold` | Dourado (`#e8c547`) |
-
-## Roteamento e controle de acesso
-
-Configuração em `frontend/src/routes/index.jsx`.
-
-| Rota | Acesso | Página |
-|---|---|---|
-| `/` | Público | Landing Page |
-| `/auth` | Guest (não logado) | Login / Cadastro |
-| `/sobre` | Público | Sobre nós |
-| `/perfil` | Autenticado | Perfil do usuário |
-| `/client-dashboard` | `Cliente` | Agendamento e histórico |
-| `/employee-dashboard` | `Funcionario`, `Admin` | Kanban de revisões |
-| `/admin-dashboard` | `Admin` | Gestão completa |
-
-### Guards
-
-- **`ProtectedRoute`**: exige login; opcionalmente restringe por `allowedRoles`
-- **`GuestRoute`**: redireciona usuários já autenticados para o dashboard correto
-
-Redirecionamento por role centralizado em `utils/authRoutes.js`:
-
-```javascript
-Cliente      → /client-dashboard
-Funcionario  → /employee-dashboard
-Admin        → /admin-dashboard
-```
-
-## Autenticação no browser
-
-| Aspecto | Implementação |
+| Rota | Quem acessa |
 |---|---|
-| Login | `POST /danke/auth/login` via `AuthContext.login()` |
-| Persistência | `localStorage`: `@DankeMotorsport:token` e `@DankeMotorsport:user` |
-| Reidratação | `useEffect` no mount do `AuthProvider` |
-| Token nas requisições | Interceptor Axios em `services/api.js` |
+| `/`, `/sobre` | Qualquer visitante |
+| `/auth` | Visitante (logado é redirecionado) |
+| `/perfil` | Usuário autenticado |
+| `/client-dashboard` | Cliente |
+| `/employee-dashboard` | Funcionário ou Admin |
+| `/admin-dashboard` | Admin |
 
-**Decisão:** `localStorage` em vez de cookies httpOnly — trade-off consciente para MVP (simplicidade); em produção futura, cookies + refresh token seria mais seguro contra XSS.
+`ProtectedRoute` checa login e, quando necessário, a `role`. `GuestRoute` evita que usuário logado volte ao login. Redirecionamento pós-login em `utils/authRoutes.js`.
 
-## Comunicação com a API
+## Sessão e API
 
-### Produção
+Login via `AuthContext.login()` → `POST /danke/auth/login`. Token e usuário ficam em `@DankeMotorsport:token` e `@DankeMotorsport:user` no `localStorage`. O interceptor do Axios anexa o Bearer automaticamente.
 
-`VITE_API_URL` define a URL base do Railway. Axios envia requisições diretamente ao backend.
+**Produção:** `VITE_API_URL` aponta para o Railway.
 
-### Desenvolvimento
+**Desenvolvimento:** com `VITE_API_URL` vazio, requisições relativas (`/danke/...`) passam pelo proxy do Vite (`vite.config.js`), configurado no Docker com `API_PROXY_TARGET=http://backend:8080`.
 
-Proxy do Vite (`vite.config.js`):
+## Páginas principais
 
-```javascript
-proxy: {
-  '/danke': { target: API_PROXY_TARGET || 'http://localhost:8080' },
-  '/health': { target: API_PROXY_TARGET || 'http://localhost:8080' },
-}
-```
+**ClientDashboard** — escolha do plano, data/hora do agendamento, observação opcional, histórico em tabela (com observação do cliente e feedback do mecânico quando existirem).
 
-Com `VITE_API_URL` vazio, `api.js` usa `baseURL: ''` (URLs relativas) e o browser fala apenas com `:5173`.
+**EmployeeDashboard** — Kanban (Pendentes / Em Andamento / Concluídos), atualização de status, feedback do mecânico, auto-atribuição na primeira interação.
 
-## Páginas por perfil
+**AdminDashboard** — estatísticas, abas de revisões/clientes/funcionários, edição em modal.
 
-### ClientDashboard
+## Validações no browser
 
-- Seleção de plano (radio cards Bronze/Silver/Gold)
-- Formulário de agendamento com observação opcional
-- Histórico em tabela com linha expandível (observação + feedback do mecânico)
+Agendamentos passam por `utils/scheduling.js` antes do POST:
 
-### EmployeeDashboard
+- não permitir data/hora no passado;
+- horário entre **08:00 e 18:00** (horário local do browser).
 
-- Layout **Kanban** em 3 colunas: Pendentes → Em Andamento → Concluídos
-- Auto-atribuição do funcionário ao iniciar/atualizar revisão
-- Campo de feedback do mecânico ao concluir
+A API repete essas regras no backend (`AgendamentoValidator`), usando fuso `America/Sao_Paulo`.
 
-### AdminDashboard
-
-- Cards de estatísticas + abas (Revisões, Clientes, Funcionários)
-- Modais de edição/criação
-- CRUD completo via API
-
-## Validações no frontend
-
-| Regra | Onde | Arquivo |
-|---|---|---|
-| Horário comercial 08:00–18:00 | Agendamento | `utils/scheduling.js` |
-| Não permitir passado | Agendamento | `utils/scheduling.js` |
-| Máscaras CPF/telefone | Auth, Profile | React IMask |
-| Confirmação de senha | Cadastro | `Auth.jsx` |
-
-**Decisão:** validar no frontend **e** no backend — UX imediata no client, garantia de integridade no server.
+Cadastro e perfil usam máscaras de CPF e telefone (React IMask). Cadastro exige confirmação de senha.
 
 ## Responsividade
 
-- Breakpoints: `576px`, `768px`, `992px`
-- Landing: grid lado a lado → empilhado no mobile
-- Dashboards: tabelas com scroll horizontal; Kanban empilha colunas
-- Mapa (Google Maps iframe): largura total no mobile
-
-## Bibliotecas auxiliares
-
-| Lib | Uso |
-|---|---|
-| React Hot Toast | Feedback não-bloqueante (sucesso/erro) |
-| React Icons | Ícones padronizados (Fa*, Md*) |
-| React IMask | Máscara de CPF e telefone |
-
-## Trade-offs e limitações conhecidas
-
-| Limitação | Impacto | Evolução possível |
-|---|---|---|
-| Sem SSR/SSG | SEO limitado na SPA | Next.js se landing precisar de SEO forte |
-| Sem testes automatizados | Regressões manuais | Vitest + Testing Library |
-| Estado local nos dashboards | Sem cache global de listas | React Query para refetch/cache |
-| JWT no localStorage | Vulnerável a XSS | Migrar para httpOnly cookie |
+Media queries em `576px`, `768px` e `992px`. Landing e dashboards empilham colunas no mobile; tabelas ganham scroll horizontal. Mapa da oficina na landing via iframe do Google Maps.

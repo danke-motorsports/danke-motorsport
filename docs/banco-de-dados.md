@@ -1,201 +1,93 @@
-# Banco de Dados — Modelo e Decisões
+# Banco de dados
 
-## Visão geral
+PostgreSQL hospedado no **Supabase**. Acesso via connection string em variável de ambiente. Schema gerenciado com **EF Core Code First**; tabelas e colunas em **snake_case**, classes C# em **PascalCase**.
 
-| Aspecto | Decisão |
-|---|---|
-| SGBD | **PostgreSQL 15+** |
-| Hospedagem | **Supabase** (dev e produção em instâncias separadas) |
-| Acesso | Connection string via variável de ambiente |
-| ORM | Entity Framework Core (Code First) |
-| Naming | Tabelas e colunas em **snake_case** no banco; classes C# em **PascalCase** |
+## Relacionamentos
 
-## Diagrama entidade-relacionamento
-
-```mermaid
-erDiagram
-    clientes ||--o{ revisoes : "solicita"
-    funcionarios ||--o{ revisoes : "atende"
-
-    clientes {
-        int id PK
-        text nome
-        text email UK
-        text cpf
-        text telefone
-        text placa_veiculo
-        text senha
-    }
-
-    funcionarios {
-        int id_funcionario PK
-        text nome_funcionario
-        int tipo_funcionario
-        int cargo
-        text email UK
-        text senha
-    }
-
-    revisoes {
-        int id_revisao PK
-        text status_revisao
-        int tipo_revisao
-        timestamptz dat_agendamento
-        timestamptz dat_finalizacao
-        int id_cliente FK
-        int id_funcionario FK "nullable"
-        text observacao_cliente "nullable"
-        text feedback_mecanico "nullable"
-    }
+```
+clientes (1) ──< revisoes >── (0..1) funcionarios
 ```
 
-## Tabelas
+- Cada revisão pertence a um **cliente** (`id_cliente`, NOT NULL).
+- **Funcionário** é opcional (`id_funcionario` NULL até alguém assumir o serviço).
+- Excluir cliente **cascade** nas revisões dele.
+- Excluir funcionário **não** apaga revisões (FK sem cascade).
 
-### `clientes`
+## Tabela `clientes`
 
-Usuários finais que agendam revisões.
-
-| Coluna | Tipo | Nullable | Descrição |
-|---|---|---|---|
-| `id` | `integer` | PK, identity | Identificador |
-| `nome` | `text` | NOT NULL | Nome completo |
-| `email` | `text` | NOT NULL, **UNIQUE** | Login e contato |
-| `cpf` | `text` | NOT NULL | Documento (máscara no frontend) |
-| `telefone` | `text` | NOT NULL | Contato |
-| `placa_veiculo` | `text` | NOT NULL | Placa do veículo (pode ser vazia no cadastro) |
-| `senha` | `text` | NOT NULL | Hash BCrypt |
-
-**Decisão:** e-mail único garantido por índice (`HasIndex(c => c.Email).IsUnique()` em `AppDbContext`).
-
----
-
-### `funcionarios`
-
-Equipe interna (mecânicos e administradores).
-
-| Coluna | Tipo | Nullable | Descrição |
-|---|---|---|---|
-| `id_funcionario` | `integer` | PK, identity | Identificador |
-| `nome_funcionario` | `text` | NOT NULL | Nome |
-| `tipo_funcionario` | `integer` | NOT NULL | `1` = Admin, outros = Operador |
-| `cargo` | `integer` | NOT NULL | Código de cargo (domínio interno) |
-| `email` | `text` | NOT NULL, **UNIQUE** | Login |
-| `senha` | `text` | NOT NULL | Hash BCrypt |
-
-**Decisão:** admin não é tabela separada — distinção via `tipo_funcionario`, refletida na claim JWT `Admin`.
-
----
-
-### `revisoes`
-
-Agendamentos de serviço (núcleo do domínio).
-
-| Coluna | Tipo | Nullable | Descrição |
-|---|---|---|---|
-| `id_revisao` | `integer` | PK, identity | Identificador |
-| `status_revisao` | `text` | NOT NULL | `Pendente`, `Em Andamento`, `Concluído` |
-| `tipo_revisao` | `integer` | NOT NULL | `1` Bronze, `2` Silver, `3` Gold |
-| `dat_agendamento` | `timestamptz` | NOT NULL | Data/hora desejada (UTC) |
-| `dat_finalizacao` | `timestamptz` | NOT NULL | Placeholder na criação; atualizado ao concluir |
-| `id_cliente` | `integer` | FK → `clientes.id` | Cliente solicitante |
-| `id_funcionario` | `integer` | FK → `funcionarios.id_funcionario`, **NULL** | Mecânico atribuído |
-| `observacao_cliente` | `text` | NULL | Sintomas / pedidos do cliente |
-| `feedback_mecanico` | `text` | NULL | Diagnóstico / serviço realizado |
-
-## Relacionamentos e integridade
-
-```mermaid
-flowchart LR
-    C[clientes] -->|"1:N CASCADE"| R[revisoes]
-    F[funcionarios] -->|"1:N optional"| R
-```
-
-| FK | Comportamento ON DELETE | Motivo |
+| Coluna | Tipo | Observação |
 |---|---|---|
-| `revisoes.id_cliente → clientes.id` | **CASCADE** | Remover cliente remove suas revisões |
-| `revisoes.id_funcionario → funcionarios.id_funcionario` | **NO ACTION** (default) | Evita cascade acidental ao remover funcionário |
+| `id` | serial PK | |
+| `nome` | text | NOT NULL |
+| `email` | text | NOT NULL, UNIQUE |
+| `cpf` | text | NOT NULL |
+| `telefone` | text | NOT NULL |
+| `placa_veiculo` | text | pode ser vazia no cadastro |
+| `senha` | text | hash BCrypt |
 
-**Decisão:** `id_funcionario` nullable — revisão nasce sem mecânico atribuído (`Pendente`) e recebe atribuição na primeira interação do funcionário.
+Índice único em `email` (`AppDbContext`).
 
-## Domínios codificados (sem tabelas lookup)
+## Tabela `funcionarios`
 
-### `status_revisao` (text)
-
-| Valor | Significado |
-|---|---|
-| `Pendente` | Aguardando atendimento |
-| `Em Andamento` | Mecânico trabalhando |
-| `Concluído` | Serviço finalizado |
-
-### `tipo_revisao` (integer)
-
-| Valor | Plano |
-|---|---|
-| 1 | Bronze — revisão básica |
-| 2 | Silver — revisão completa |
-| 3 | Gold — diagnóstico avançado |
-
-### `tipo_funcionario` (integer)
-
-| Valor | Role JWT |
-|---|---|
-| 1 | Admin |
-| ≠ 1 | Funcionario |
-
-**Decisão:** valores mágicos em colunas simples — adequado ao MVP acadêmico; evolução natural seria tabelas `planos`, `status` e `cargos` com seed.
-
-## Tratamento de datas
-
-- Colunas: `timestamp with time zone` (`timestamptz`)
-- Backend persiste em **UTC** (`ToUniversalTime()`)
-- Validação de horário comercial usa fuso **`America/Sao_Paulo`**
-- Frontend exibe com `toLocaleDateString('pt-BR')`
-
-## Histórico de migrations
-
-| Migration | Data (nome) | Alteração |
+| Coluna | Tipo | Observação |
 |---|---|---|
-| `SetupInicial` | 20260412140507 | Cria `clientes`, `funcionarios`, `revisoes` com FKs |
-| `AddAuthAndNullableEmployee` | 20260606192336 | Adiciona `email`/`senha` em clientes e funcionários; `id_funcionario` nullable |
-| `AddUniqueEmailConstraints` | 20260618221734 | Índices UNIQUE em `clientes.email` e `funcionarios.email` |
-| `AddObservacaoAndFeedbackToRevisoes` | 20260619004942 | Colunas `observacao_cliente` e `feedback_mecanico` |
+| `id_funcionario` | serial PK | |
+| `nome_funcionario` | text | NOT NULL |
+| `tipo_funcionario` | int | `1` = admin (role JWT `Admin`) |
+| `cargo` | int | código interno |
+| `email` | text | NOT NULL, UNIQUE |
+| `senha` | text | hash BCrypt |
 
-### Aplicar migrations
+Admin não é tabela separada — distinção por `tipo_funcionario`.
+
+## Tabela `revisoes`
+
+| Coluna | Tipo | Observação |
+|---|---|---|
+| `id_revisao` | serial PK | |
+| `status_revisao` | text | `Pendente`, `Em Andamento`, `Concluído` |
+| `tipo_revisao` | int | 1 Bronze, 2 Silver, 3 Gold |
+| `dat_agendamento` | timestamptz | UTC |
+| `dat_finalizacao` | timestamptz | placeholder na criação; atualizado ao concluir |
+| `id_cliente` | int FK | → `clientes.id` |
+| `id_funcionario` | int FK NULL | → `funcionarios.id_funcionario` |
+| `observacao_cliente` | text NULL | |
+| `feedback_mecanico` | text NULL | |
+
+Status e planos são valores fixos no código, não tabelas lookup.
+
+## Datas
+
+Colunas `timestamptz`. Backend grava UTC (`ToUniversalTime()`). Validação de horário comercial usa `America/Sao_Paulo`. Frontend formata com locale pt-BR.
+
+## Migrations
+
+| Migration | O que faz |
+|---|---|
+| `SetupInicial` | Cria as três tabelas e FKs |
+| `AddAuthAndNullableEmployee` | E-mail/senha em clientes e funcionários; `id_funcionario` nullable |
+| `AddUniqueEmailConstraints` | UNIQUE em `clientes.email` e `funcionarios.email` |
+| `AddObservacaoAndFeedbackToRevisoes` | `observacao_cliente`, `feedback_mecanico` |
+
+Aplicar:
 
 ```bash
-# Via Docker
 docker compose run --rm backend dotnet ef database update
-
-# Manual
-cd backend
-dotnet ef database update
 ```
 
-## Tabela de controle EF
+ou, fora do Docker, `dotnet ef database update` na pasta `backend/`.
 
-`__EFMigrationsHistory` — registrada automaticamente pelo EF Core; não alterar manualmente.
+EF mantém histórico em `__EFMigrationsHistory` — não editar manualmente.
 
-## Seed e primeiro admin
+## Primeiro administrador
 
-Não há seed automático no código. O primeiro administrador é inserido manualmente via SQL no Supabase:
+Não há seed no código. Inserir manualmente no Supabase (senha em BCrypt, mesma lib do backend):
 
 ```sql
 INSERT INTO funcionarios (nome_funcionario, tipo_funcionario, cargo, email, senha)
 VALUES ('Admin', 1, 1, 'admin@exemplo.com', '<bcrypt-hash>');
 ```
 
-O hash BCrypt deve ser gerado com a mesma biblioteca do backend (`BCrypt.Net`).
+## Keep-alive (Supabase)
 
-## Keep-alive (Supabase free tier)
-
-Workflow GitHub Actions (`.github/workflows/keepalive.yml`) executa `SELECT 1` a cada 5 dias para evitar pausa do banco por inatividade no tier gratuito.
-
-## Evoluções futuras sugeridas
-
-| Melhoria | Benefício |
-|---|---|
-| Tabela `planos` | Preços, descrições e duração configuráveis |
-| Índice em `revisoes.dat_agendamento` | Consultas de agenda por período |
-| CHECK constraint em `status_revisao` | Integridade no banco além da aplicação |
-| Soft delete (`deleted_at`) | Auditoria sem perder histórico |
-| Tabela `horarios_bloqueados` | Feriados e exceções ao horário comercial |
+Workflow `.github/workflows/keepalive.yml` roda `SELECT 1` periodicamente para reduzir pausa do banco no plano gratuito por inatividade.

@@ -1,143 +1,73 @@
-# Arquitetura do Sistema
+# Arquitetura
 
 ## Visão geral
 
-O projeto segue uma arquitetura **cliente-servidor em camadas**, com frontend SPA desacoplado do backend REST e banco PostgreSQL gerenciado externamente.
+Aplicação **cliente-servidor**: SPA React (Vite) no browser, API REST em ASP.NET Core e PostgreSQL no Supabase. O frontend e o backend ficam em pastas separadas no mesmo repositório, o que simplifica o Docker Compose e o trabalho em equipe.
 
-```mermaid
-flowchart TB
-    subgraph Cliente["Navegador"]
-        SPA["React SPA (Vite)"]
-    end
-
-    subgraph HospedagemFront["Vercel (produção)"]
-        Static["Build estático + CDN"]
-    end
-
-    subgraph HospedagemBack["Railway (produção)"]
-        API["ASP.NET Core Web API"]
-    end
-
-    subgraph Dados["Supabase"]
-        PG[("PostgreSQL")]
-    end
-
-    SPA -->|"HTTPS + JWT"| API
-    Static --> SPA
-    API -->|"Npgsql / EF Core"| PG
+```
+Browser ──► React (Vite) ──► API /danke/* ──► EF Core ──► PostgreSQL (Supabase)
 ```
 
-## Camadas e responsabilidades
+Em produção, o frontend é servido pela **Vercel** e a API pela **Railway**. O banco continua no **Supabase** (instâncias distintas para dev e produção).
 
-| Camada | Tecnologia | Responsabilidade |
+## Camadas
+
+| Camada | Tecnologia | Função |
 |---|---|---|
-| **Apresentação** | React 19 + Vite | UI, rotas, validação de formulários, persistência de sessão no browser |
-| **API** | ASP.NET Core 10 | Autenticação, autorização, regras de negócio, exposição REST |
-| **Persistência** | EF Core + Npgsql | Mapeamento ORM, migrations, acesso ao PostgreSQL |
-| **Banco** | PostgreSQL (Supabase) | Armazenamento relacional de clientes, funcionários e revisões |
+| Frontend | React 19 + Vite | Interface, rotas, formulários, sessão no browser |
+| API | ASP.NET Core 10 | Autenticação, autorização, regras de negócio |
+| Persistência | EF Core + Npgsql | ORM e migrations |
+| Banco | PostgreSQL | Clientes, funcionários e revisões |
 
-## Comunicação entre camadas
+Todos os endpoints usam o prefixo `/danke/`. JSON em **camelCase**; datas gravadas em **UTC** no banco e formatadas em pt-BR na interface.
 
-### Prefixo da API
+## Autenticação (resumo)
 
-Todos os endpoints REST usam o prefixo `/danke/` (ex.: `POST /danke/auth/login`, `GET /danke/revisao/cliente`).
+Login unificado em `POST /danke/auth/login`. A API busca o e-mail em `clientes` e, se não achar, em `funcionarios`. Senha validada com BCrypt; resposta com JWT (7 dias) e dados do usuário (`role`: Cliente, Funcionario ou Admin).
 
-### Formato de dados
+O frontend guarda token e usuário no `localStorage` e envia `Authorization: Bearer` nas requisições. Rotas protegidas no React (`ProtectedRoute`) complementam, mas a autorização real está nos atributos `[Authorize]` da API.
 
-- Request/response em **JSON**
-- Propriedades em **camelCase** no wire format (configurado no backend)
-- Datas armazenadas em **UTC** (`timestamp with time zone`) e convertidas para exibição local no frontend
-
-### Autenticação
-
-```mermaid
-sequenceDiagram
-    participant B as Browser
-    participant F as Frontend
-    participant A as AuthController
-    participant DB as PostgreSQL
-
-    B->>F: Login (email, senha)
-    F->>A: POST /danke/auth/login
-    A->>DB: Busca Cliente ou Funcionário
-    A->>A: BCrypt.Verify + gera JWT (7 dias)
-    A-->>F: { token, user }
-    F->>F: localStorage (token + user)
-    F->>A: Requisições com Authorization: Bearer
-    A->>A: Valida JWT + role
-    A-->>F: Dados protegidos
-```
+Detalhes por camada: [frontend.md](./frontend.md), [backend.md](./backend.md).
 
 ## Ambientes
 
-### Desenvolvimento local (Docker Compose)
+### Desenvolvimento (Docker Compose)
 
-```mermaid
-flowchart LR
-    Browser["Browser :5173"]
-    Vite["Frontend container\n(Vite dev server)"]
-    Backend["Backend container\n:8080"]
-    DB[("Supabase dev")]
+- Frontend: http://localhost:5173  
+- API: http://localhost:8080 (Swagger em `/swagger`)  
+- Banco: connection string do `.env.development` (geralmente Supabase de dev)
 
-    Browser --> Vite
-    Browser -->|"proxy /danke"| Vite
-    Vite -->|"API_PROXY_TARGET"| Backend
-    Backend --> DB
-```
-
-**Decisão:** no Docker, o browser **não** chama `localhost:8080` diretamente. O Vite faz **proxy** de `/danke` e `/health` para o serviço `backend:8080` na rede interna do Compose. Isso evita problemas de CORS e de porta não publicada no host.
+No Compose, o Vite faz **proxy** de `/danke` e `/health` para o container `backend:8080`. O browser não precisa chamar a porta 8080 diretamente; `VITE_API_URL` fica vazio e `API_PROXY_TARGET=http://backend:8080` vale só para o dev server.
 
 ### Produção
 
-| Serviço | Provedor | Branch |
-|---|---|---|
-| Frontend | Vercel | `production` |
-| Backend | Railway | `production` |
-| Banco | Supabase | instância de produção |
+Deploy automático a partir da branch `production`. O frontend usa `VITE_API_URL` apontando para a URL pública do Railway. CORS no backend (`AllowedOrigins__0`) deve ser a URL exata do Vercel.
 
-O frontend em produção usa `VITE_API_URL` apontando para a URL pública do Railway (sem proxy do Vite).
+Health check: `GET /health` → `{ "status": "healthy" }` (Docker e Railway).
 
-## Estrutura de diretórios
+## Estrutura do repositório
 
 ```
 danke-motorsport/
-├── frontend/           # SPA React
-│   └── src/
-│       ├── components/
-│       ├── contexts/
-│       ├── pages/
-│       ├── routes/
-│       ├── services/
-│       ├── styles/
-│       └── utils/
-├── backend/            # Web API
-│   ├── Controllers/
-│   ├── Data/
-│   ├── Models/
-│   ├── Services/
-│   └── Migrations/
-├── docs/               # Esta documentação
+├── frontend/src/     components, pages, routes, services, styles, utils
+├── backend/          Controllers, Models, Data, Services, Migrations
+├── docs/
 └── docker-compose.yml
 ```
 
-## Health check e observabilidade
+## Escolhas gerais
 
-- Endpoint `GET /health` retorna `{ "status": "healthy" }`
-- Usado pelo healthcheck do Docker Compose e pelo deploy no Railway
-- Swagger disponível apenas em `Development` (`/swagger`)
+- **Monorepo** frontend + backend para um único `docker compose up`.
+- **Supabase** como PostgreSQL gerenciado (sem operar servidor próprio no MVP).
+- **JWT stateless** — sem store de sessão no servidor.
+- **CSS puro** nos dashboards (Swiss Design + cores Danke), sem UI kit externo.
+- **Sem fila de mensagens** — fluxo síncrono HTTP, suficiente para o volume atual.
 
-## Decisões arquiteturais transversais
+## Limitações conhecidas (projeto)
 
-| Decisão | Motivação |
-|---|---|
-| Monorepo frontend + backend | Facilita desenvolvimento acadêmico em equipe e Docker Compose unificado |
-| Supabase como PostgreSQL gerenciado | Evita operar banco local; tier gratuito adequado ao MVP |
-| JWT stateless | Simplicidade de escala horizontal no backend sem store de sessão |
-| Sem fila/mensageria | MVP síncrono; volume de agendamentos não exige processamento assíncrono |
-| CSS puro (sem Tailwind/Bootstrap) | Controle fino do visual Swiss Design alinhado à marca Danke |
+- JWT no `localStorage` (sem refresh token).
+- Listagens sem paginação.
+- Planos de revisão (`tipo_revisao`) como inteiro, sem tabela de lookup no banco.
+- Poucos testes automatizados.
 
-## Referências
-
-- [Frontend — decisões detalhadas](./frontend.md)
-- [Backend — decisões detalhadas](./backend.md)
-- [Banco de Dados — schema e migrations](./banco-de-dados.md)
+Mais detalhes por camada nos outros arquivos desta pasta.

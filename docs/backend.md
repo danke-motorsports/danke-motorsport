@@ -1,166 +1,105 @@
-# Backend — Decisões de Projeto
+# Backend
 
 ## Stack
 
-| Componente | Tecnologia | Versão |
-|---|---|---|
-| Runtime | .NET | 10 |
-| Framework | ASP.NET Core Web API | 10 |
-| ORM | Entity Framework Core | 10 |
-| Driver PostgreSQL | Npgsql | via EF Core |
-| Autenticação | JWT Bearer | Microsoft.AspNetCore.Authentication.JwtBearer |
-| Hash de senha | BCrypt.Net-Next | — |
-| Documentação API | Swashbuckle (Swagger) | Apenas Development |
-
-## Estrutura de camadas
+ASP.NET Core 10 (Web API), Entity Framework Core, Npgsql, JWT Bearer, BCrypt.Net-Next e Swagger (somente em Development).
 
 ```
 backend/
-├── Controllers/     # Endpoints REST (thin controllers)
-├── Models/          # Entidades EF mapeadas às tabelas
-├── Data/            # AppDbContext
-├── Services/        # Regras de negócio reutilizáveis
-├── Migrations/      # Evolução do schema
-└── Program.cs       # Composição DI, middleware, CORS, JWT
+├── Controllers/
+├── Models/
+├── Data/           AppDbContext
+├── Services/       ex.: AgendamentoValidator
+├── Migrations/
+└── Program.cs
 ```
 
-**Decisão:** controllers finos — lógica de validação de domínio extraída para `Services/` quando reutilizável (ex.: `AgendamentoValidator`). Sem camada Repository explícita; EF Core via `AppDbContext` injetado nos controllers.
+Controllers concentram o fluxo HTTP; regras reutilizáveis ficam em `Services/`. Não há camada Repository — o `AppDbContext` é injetado direto nos controllers.
 
-## Configuração e variáveis de ambiente
+## Configuração
 
-Toda configuração sensível vem de **variáveis de ambiente** (nunca hardcoded):
+Variáveis obrigatórias (via `.env` ou painel do provedor):
 
-| Variável | Obrigatória | Descrição |
-|---|---|---|
-| `ConnectionStrings__DefaultConnection` | Sim | Connection string PostgreSQL |
-| `Jwt__Key` | Sim | Segredo HMAC (mín. 32 caracteres) |
-| `AllowedOrigins__0` | Sim | Origem CORS do frontend |
-| `PORT` | Não | Porta HTTP (default `8080`) |
-| `ASPNETCORE_ENVIRONMENT` | Não | `Development` ou `Production` |
+| Variável | Uso |
+|---|---|
+| `ConnectionStrings__DefaultConnection` | PostgreSQL |
+| `Jwt__Key` | Assinatura do JWT (32+ caracteres) |
+| `AllowedOrigins__0` | Origem CORS do frontend |
+| `PORT` | Porta HTTP (padrão 8080) |
 
-`Program.cs` lança `InvalidOperationException` na inicialização se connection string, JWT ou CORS estiverem ausentes — **fail-fast** para evitar subir API mal configurada.
+Se connection string, JWT ou CORS faltarem, a aplicação falha na subida (`InvalidOperationException` em `Program.cs`).
 
-## Autenticação e autorização
+## Autenticação
 
-### Fluxo de login (`AuthController`)
+`AuthController` — `POST /danke/auth/login`:
 
-1. Busca e-mail em `clientes`; se encontrado, valida senha com BCrypt
-2. Se não encontrado, busca em `funcionarios`
-3. Gera JWT com claims: `NameIdentifier` (id), `Role`, `Name`, `Email`
-4. Token válido por **7 dias**; assinatura HMAC-SHA256
+1. Busca e-mail em `clientes`; se achar, valida senha (BCrypt) e emite JWT com role `Cliente`.
+2. Senão, busca em `funcionarios`; role `Admin` se `tipo_funcionario = 1`, senão `Funcionario`.
+3. Token HMAC-SHA256, validade de 7 dias. Claims: id, role, nome, e-mail.
 
-### Mapeamento de roles
+Senhas nunca voltam no JSON de resposta (`JsonIgnore` nos models).
 
-| Origem | Condição | Role JWT |
-|---|---|---|
-| Tabela `clientes` | — | `Cliente` |
-| Tabela `funcionarios` | `tipo_funcionario = 1` | `Admin` |
-| Tabela `funcionarios` | `tipo_funcionario ≠ 1` | `Funcionario` |
+## Autorização
 
-### Proteção de endpoints
+Endpoints protegidos com `[Authorize]` e roles quando necessário. Exemplos:
 
-Atributo `[Authorize]` com roles específicas por operação:
+- Cliente cria revisão: `POST /danke/revisao` → role `Cliente`
+- Funcionário altera status: `PATCH /danke/revisao/{id}` → `Funcionario` ou `Admin`
+- Admin edita revisão completa: `PUT /danke/revisao/{id}` → `Admin`
+- Cadastro de cliente: `POST /danke/clientes` → público
+- Listagem de clientes: `GET /danke/clientes` → `Funcionario` ou `Admin`
 
-| Controller | Operação | Roles |
-|---|---|---|
-| `AuthController` | POST login | Público |
-| `ClientesController` | POST cadastro | Público |
-| `ClientesController` | GET lista | Funcionario, Admin |
-| `RevisaoController` | POST criar | Cliente |
-| `RevisaoController` | PATCH status | Funcionario, Admin |
-| `RevisaoController` | PUT editar | Admin |
-| `FuncionariosController` | POST/PUT/DELETE | Funcionario, Admin |
+A API é quem impõe permissão; o frontend só esconde rotas.
 
-**Decisão:** autorização no backend é a fonte da verdade; guards do frontend são apenas UX.
+## JSON e CORS
 
-## Serialização JSON
+Respostas em camelCase; `ReferenceHandler.IgnoreCycles` evita loop ao serializar navegações EF (`Cliente` ↔ `Revisao`).
 
-Configurado em `Program.cs`:
-
-- **camelCase** nas propriedades de resposta/request
-- **ReferenceHandler.IgnoreCycles** — evita loop infinito ao serializar navegações EF (`Cliente.Revisoes → Cliente`)
-
-Senhas nunca são expostas na escrita: `[JsonIgnore(Condition = JsonIgnoreCondition.WhenWriting)]` no model.
-
-## CORS
-
-Política `AllowReact` com origens lidas de `AllowedOrigins` no appsettings/env. Métodos e headers liberados para SPA.
+CORS: política `AllowReact`, origens de `AllowedOrigins` no appsettings/env.
 
 ## Regras de negócio
 
-### Agendamento (`AgendamentoValidator`)
+### Agendamento
 
-Validado em:
+`AgendamentoValidator` valida `datAgendamento` em:
 
-- `POST /danke/revisao` (cliente cria)
-- `PUT /danke/revisao/{id}` (admin edita)
+- `POST /danke/revisao` (cliente)
+- `PUT /danke/revisao/{id}` (admin)
 
-| Regra | Detalhe |
-|---|---|
-| Não no passado | Comparação em `America/Sao_Paulo` |
-| Horário comercial | 08:00 ≤ hora ≤ 18:00 (local) |
-| Armazenamento | Convertido para UTC antes de persistir |
+Regras: não no passado; entre 08:00 e 18:00 em `America/Sao_Paulo`; persistência em UTC.
 
-### Revisões — ciclo de vida
+### Ciclo da revisão
 
-```
-Pendente → Em Andamento → Concluído
-```
+Status: `Pendente` → `Em Andamento` → `Concluído`.
 
-| Evento | Comportamento |
-|---|---|
-| Cliente cria revisão | Status `Pendente`, `IdFuncionario = null` |
-| Funcionário interage | Auto-atribui `IdFuncionario` na primeira ação |
-| Status `Concluído` | `DatFinalizacao = UtcNow` |
-| Funcionário não-admin | Só altera revisões próprias ou sem atribuição |
+Nova revisão: status `Pendente`, sem funcionário atribuído. Na primeira ação do funcionário, `IdFuncionario` é preenchido. Ao concluir, `DatFinalizacao` recebe `UtcNow`.
 
-### Planos de revisão (`tipo_revisao`)
+Funcionário que não é admin só altera revisão sem dono ou já atribuída a ele.
 
-| Valor | Plano |
-|---|---|
-| 1 | Bronze |
-| 2 | Silver |
-| 3 | Gold |
+### Planos
 
-Representado como `int` (não enum PostgreSQL) — simplicidade no MVP; enum C# ou lookup table seria evolução futura.
+`tipo_revisao`: `1` Bronze, `2` Silver, `3` Gold (inteiro no banco, sem tabela auxiliar).
 
-## Endpoints principais
+## Endpoints (prefixo `/danke/`)
 
-Prefixo base: `/danke/`
-
-| Método | Rota | Descrição |
+| Método | Rota | Notas |
 |---|---|---|
-| POST | `/auth/login` | Autenticação |
-| GET/POST/PUT/DELETE | `/clientes` | CRUD clientes |
-| GET/POST/PUT/DELETE | `/funcionarios` | CRUD funcionários |
+| POST | `/auth/login` | Login |
+| GET/POST/PUT/DELETE | `/clientes` | CRUD |
+| GET/POST/PUT/DELETE | `/funcionarios` | CRUD |
 | GET | `/revisao/cliente` | Revisões do cliente logado |
 | GET | `/revisao/funcionario` | Revisões do funcionário |
 | GET | `/revisao/pendentes` | Fila pendente |
-| POST | `/revisao` | Nova revisão (cliente) |
-| PATCH | `/revisao/{id}` | Atualizar status |
-| PUT | `/revisao/{id}` | Edição completa (admin) |
-| DELETE | `/revisao/{id}` | Remover revisão |
+| POST | `/revisao` | Nova revisão |
+| PATCH | `/revisao/{id}` | Status (+ feedback opcional) |
+| PUT | `/revisao/{id}` | Edição admin |
+| DELETE | `/revisao/{id}` | Remoção |
 | GET | `/health` | Health check |
 
 ## Migrations
 
-Gerenciadas pelo EF Core (`dotnet ef migrations add`, `dotnet ef database update`). Histórico documentado em [Banco de Dados](./banco-de-dados.md).
-
-**Decisão:** migrations versionadas no repositório; aplicadas manualmente em dev/prod (não auto-apply no startup) para controle explícito.
+EF Core; histórico em [banco-de-dados.md](./banco-de-dados.md). Aplicadas manualmente (`dotnet ef database update`), não no startup da API.
 
 ## Deploy (Railway)
 
-- Build via `backend/Dockerfile`
-- Health check em `/health`
-- Variáveis de ambiente configuradas no painel Railway
-- `AllowedOrigins__0` deve coincidir com URL exata do Vercel
-
-## Trade-offs e limitações conhecidas
-
-| Limitação | Impacto | Evolução possível |
-|---|---|---|
-| JWT sem refresh token | Re-login após 7 dias | Refresh token + rotação |
-| Sem rate limiting | Brute force no login | Middleware de throttling |
-| `tipo_revisao` como int | Sem FK para tabela de planos | Tabela `planos` + seed |
-| Validação de CPF/placa no backend mínima | Dados inconsistentes possíveis | FluentValidation |
-| Sem paginação nas listagens | Performance em escala | `Skip/Take` + query params |
+Build pelo `Dockerfile` em `backend/`. Health check em `/health`. Variáveis no painel; `AllowedOrigins__0` deve bater com a URL do Vercel.
