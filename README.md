@@ -1,7 +1,7 @@
 # Danke Motorsport - Plataforma de Agendamento Premium
 
 <p align="center">
-  <img src="./dankelogo.jpeg" alt="Logo Danke Motorsport" width="200">
+  <img src="./dankelogo-auth.jpeg" alt="Logo Danke Motorsport" width="200">
 </p>
 
 > **UM NOVO CONCEITO EM REPARAÇÃO PREMIUM**
@@ -27,16 +27,44 @@ Seu diferencial de mercado é a altíssima expertise técnica dos fundadores:
 
 ## Stack Tecnológica
 
-A arquitetura do projeto separa claramente as responsabilidades de interface e regra de negócio:
+A arquitetura do projeto separa claramente as responsabilidades de interface (Front-end) e regra de negócio (Back-end):
 
-| Camada | Tecnologia |
-|---|---|
-| Front-end | React 19 + Vite + React Router DOM |
-| Back-end (API) | C# .NET 10 (ASP.NET Core Web API) |
-| ORM | Entity Framework Core |
-| Banco de Dados | PostgreSQL hospedado no Supabase |
-| Deploy Frontend | Vercel |
-| Deploy Backend | Railway |
+| Camada | Tecnologia Principal | Bibliotecas & Detalhes |
+|---|---|---|
+| **Front-end** | React 19 + Vite + React Router DOM | Axios, React Hot Toast, React Icons, React IMask, Google Maps (iframe embed) |
+| **Back-end (API)** | C# .NET 10 (ASP.NET Core Web API) | Entity Framework Core, Npgsql, JWT Bearer, BCrypt.Net-Next, Swashbuckle (Swagger) |
+| **Banco de Dados** | PostgreSQL | Hospedado no Supabase |
+| **Hospedagem & Deploy** | Vercel (Front-end) e Railway (Back-end) | Deploy automático integrado com GitHub |
+
+### Detalhes do Front-end
+* **React 19 & Vite:** Interface modular baseada em componentes com tempo de inicialização e build otimizados.
+* **React Router DOM:** Gerenciamento dinâmico de rotas e segurança das páginas restritas.
+* **Axios:** Cliente HTTP para comunicação com a API, responsável por anexar o token JWT às requisições autenticadas.
+* **React Hot Toast:** Exibição de alertas não-bloqueantes para confirmações e erros.
+* **React Icons:** Conjunto padronizado de ícones para toda a interface.
+* **React IMask:** Inclusão de máscaras de digitação para dados sensíveis (CPF e telefone) nas telas de cadastro e alteração de perfil.
+* **Integração com Mapas (Google Maps):**
+  * Não é utilizada biblioteca npm de mapas externa.
+  * A localização física da oficina em Palhoça/SC é apresentada por meio de um `iframe embed` do Google Maps inserido na Landing Page.
+  * **Responsividade:** Em telas grandes (Desktop), o mapa se posiciona ao lado do texto descritivo. Em telas móveis (Mobile), o mapa se ajusta de maneira fluida ocupando a largura total do display abaixo da seção informativa.
+
+### Detalhes do Back-end
+* **ASP.NET Core (Web API):** Criação de endpoints REST estruturados e altamente performáticos.
+* **Entity Framework Core (EF Core) & Npgsql:** Mapeamento objeto-relacional para consultas e manipulação direta do banco PostgreSQL.
+* **JWT Bearer:** Geração de chaves e autorização de tokens de acesso para segurança de sessão.
+* **BCrypt.Net-Next:** Criptografia de senhas por meio de hash antes do armazenamento no banco de dados.
+* **Swashbuckle (Swagger):** Exposição e testes rápidos dos endpoints da API em ambiente de desenvolvimento.
+
+---
+
+## Responsividade
+
+A responsividade do sistema foi implementada integralmente com **CSS puro (Vanilla CSS)**, sem o auxílio de frameworks utilitários de terceiros.
+* **Breakpoints:** Adaptabilidade configurada através de Media Queries (`@media`) sob as resoluções de `576px`, `768px` e `992px`.
+* **Flexbox & CSS Grid:** Utilizados para a reorganização automática do fluxo visual:
+  * **Landing Page:** Exibição horizontal (lado a lado) em telas de desktop, transicionando para empilhamento vertical em telas de smartphones.
+  * **Dashboards:** Seções e tabelas adaptam suas colunas de dados para blocos únicos de visualização em displays pequenos.
+  * **Navbar:** Readequação de espaçamentos internos e alinhamento dos links em aparelhos celulares, prevenindo quebras.
 
 ---
 
@@ -114,6 +142,19 @@ sequenceDiagram
         F-->>U: Redireciona para /auth
     end
 ```
+
+### Detalhes de Segurança e Autenticação
+
+* **Hash de Senha (BCrypt):**
+  * As senhas dos usuários nunca são salvas em texto puro no banco de dados.
+  * No cadastro e na atualização de dados de perfil, o backend aplica `BCrypt.HashPassword` para gerar um hash criptográfico seguro.
+  * No momento do login, o método `BCrypt.Verify` realiza a verificação comparando a senha informada com o hash guardado.
+  * O mesmo algoritmo é adotado em todas as etapas e endpoints da API de backend.
+* **Autenticação Baseada em JWT:**
+  * O login gera um token JWT criptografado com validade de **7 dias**.
+  * O frontend armazena o token recebido no `localStorage` do navegador para manter a sessão ativa.
+  * Todas as chamadas à API que requerem autorização enviam o token no cabeçalho `Authorization: Bearer {token}` de forma automatizada via Axios.
+  * O backend valida a assinatura do token e extrai as *claims* de acesso, validando a role correspondente (`Cliente`, `Funcionario` ou `Admin`).
 
 ---
 
@@ -248,17 +289,59 @@ VALUES ('Admin', 1, 1, 'admin@exemplo.com', '<bcrypt-hash>');
 
 Para o passo a passo completo (local e produção), consulte [`setup.xml`](./setup.xml).
 
+### Keep-Alive do Banco (Supabase)
+
+Como a plataforma gratuita do Supabase suspende e pausa o banco de dados PostgreSQL após um período de inatividade, foi implementado um mecanismo automatizado de keep-alive:
+* **Workflow do GitHub Actions:** Localizado em `.github/workflows/keepalive.yml`.
+* **Frequência:** Executado automaticamente a cada **5 dias às 00:00 UTC** via agendamento (`cron: 0 0 */5 * *`).
+* **Acionamento Manual:** Também pode ser ativado a qualquer momento na aba *Actions -> Keep Supabase Alive -> Run workflow* do repositório no GitHub.
+* **Funcionamento:** O job instala o utilitário `psql` no ambiente de CI e executa um comando simples de ping (`SELECT 1;`) no banco de dados, o que reativa o PostgreSQL do Supabase se ele estiver inativo ou evita que ele entre em hibernação, sem causar nenhuma modificação nos dados reais.
+* **Segurança & Requisitos:** O fluxo necessita da variável secreta `SUPABASE_CONNECTION_STRING` (a connection string completa do Supabase) cadastrada nas secrets do repositório do GitHub. Caso a secret não esteja configurada, o workflow falhará acusando erro explicitamente.
+
 ---
 
-## Integrantes da Equipe
+## Integrantes da Equipe e Histórico de Contribuições
 
-Desenvolvido por estudantes de graduação em Sistemas de Informação - UFSC:
+O projeto foi planejado e implementado por estudantes de graduação em Sistemas de Informação na UFSC. Detalhamento de commits e responsabilidades:
 
-* David
-* Eduardo
-* Gustavo
-* Johan
-* Jonathan
+### Eduardo Steinbach
+* **Estruturação:** Organizou a estrutura inicial de pastas e diretórios (backend e frontend).
+* **Documentação:** Atualizou o arquivo README e elaborou a documentação XML da API.
+* **Design Visual:** Realizou a centralização da logo do projeto no frontend.
+* **Mapeamento de Dados:** Desenhou e configurou os modelos de banco de dados do Entity Framework Core.
+* **API REST:** Codificou os primeiros controladores e rotas de backend.
+* **Segurança:** Removeu credenciais/URLs fixas em arquivos de código e protegeu as rotas da API com anotações `[Authorize]`.
+* **Organização e Refatoração:** Limpeza de arquivos desnecessários (move trash), criação da página "Sobre nós" e implementação do modal para confirmação de logout.
+
+### Gustavo Dorow
+* **Controle de Versão:** Criou o repositório no GitHub e definiu o arquivo `.gitignore`.
+* **API Completa:** Desenvolveu o CRUD total na API para Clientes, Funcionários e Revisões.
+* **Deploy de Produção:** Estruturou os arquivos de produção para Vercel e Railway, configurando Dockerfile, health checks, SPA routing e documentação relacionada.
+* **UX/UI no Front:** Criou máscaras dinâmicas de CPF/Telefone no formulário, mensagens informativas em toasts, login automatizado imediatamente após cadastro e a tela de boas-vindas do sistema.
+* **Variáveis de Ambiente:** Configurou o Docker Compose unificado com definições locais de `.env`.
+* **Edição de Cadastro:** Criou e conectou o dashboard do cliente para alteração de informações pessoais.
+* **Ajustes Técnicos:** Corrigiu a renderização de observações nas revisões, adicionou o mapa estático da localização física e ajustou componentes da Navbar.
+
+### Johan Rodrigues
+* **Estrutura Frontend:** Conduziu o setup inicial da aplicação React e mapeou as variáveis globais de estilização CSS (`:root`).
+* **Componente Navbar:** Criou a barra de cabeçalho e navegação.
+* **Página Principal:** Projetou e implementou a Landing Page institucional do cliente.
+* **Páginas de Login/Cadastro:** Criou as interfaces e formulários de login e criação de conta.
+* **Responsividade:** Aplicou técnicas de CSS responsivo para exibição consistente em dispositivos móveis.
+* **Gestão Admin:** Criou o painel de dashboard exclusivo do Administrador.
+
+### David Kauan
+* **Segurança Backend:** Implementou a autenticação por token JWT, barreira de proteção de rotas e o job Keep-Alive.
+* **CI/CD Fix:** Corrigiu o parsing da string de conexão de banco de dados no ambiente de CI.
+* **Regras de Validação:** Adicionou restrição de e-mail exclusivo no cadastro de clientes e refinou configurações do Docker.
+* **Parsing de Objetos:** Resolveu bugs de CORS e crashes na serialização JSON resultantes de ciclos de referências entre entidades.
+* **Interação de Revisões:** Adicionou campos para envio de observações do cliente e de feedbacks detalhados escritos pelos mecânicos.
+
+### Jonathan Tenório
+* **Documentação:** Atualizou o arquivo README relacionando os membros do grupo.
+* **Controle Admin:** Programou rotas e funcionalidades de controle do administrador dentro dos controllers de backend.
+* **Resolução de Bugs:** Eliminou a barra preta presente no botão "Entrar", resolveu imports circulares no front e normalizou o scroll vertical na página de cadastro.
+* **Polimento Visual:** Refatorou o visual completo dos painéis de controle, migrando-os para um design minimalista suíço (Swiss Design) alinhado com o branding oficial Danke.
 
 ---
 
