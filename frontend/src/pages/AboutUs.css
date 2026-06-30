@@ -147,18 +147,18 @@
 
 /* WhatsApp Card */
 .whatsapp-card {
-  background: linear-gradient(135deg, rgba(37, 211, 102, 0.05) 0%, rgba(18, 18, 18, 0.2) 100%);
+  background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(37, 211, 102, 0.15);
   border-radius: 16px;
   padding: 2rem;
   position: relative;
   overflow: hidden;
-  transition: all 0.3s ease;
+  transition: border-color 0.3s ease;
+  box-shadow: none;
 }
 
 .whatsapp-card:hover {
-  border-color: rgba(37, 211, 102, 0.4);
-  box-shadow: 0 8px 30px rgba(37, 211, 102, 0.1);
+  border-color: rgba(37, 211, 102, 0.35);
 }
 
 .whatsapp-card-content h3 {
@@ -184,11 +184,11 @@
   font-weight: 700;
   padding: 14px 28px;
   border-radius: 8px;
-  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: none;
+  transition: background-color 0.2s ease;
 }
 
 .btn-whatsapp-direct:hover {
-  transform: scale(1.01) translateY(-1px);
   background-color: #20ba56;
 }
 

@@ -198,6 +198,8 @@ Antes de executar o projeto localmente, você precisará ter instalado:
 
 Para instruções detalhadas de execução, consulte o arquivo [`setup.xml`](./setup.xml) na raiz do projeto.
 
+Para **decisões de projeto, arquitetura e modelo de banco** separados por camada, consulte a pasta [`docs/`](./docs/).
+
 ---
 
 ## Execução Local (Docker Compose — recomendado)
