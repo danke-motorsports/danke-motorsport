@@ -85,6 +85,12 @@
   letter-spacing: 0.06em;
 }
 
+.input-hint {
+  font-size: 12px;
+  color: var(--swiss-text-secondary);
+  line-height: 1.4;
+}
+
 .date-input,
 .observation-textarea,
 .modal-form-group input,
@@ -263,6 +269,16 @@
   background: var(--swiss-bg-subtle);
 }
 
+.history-table tr:has(+ tr.detail-row) td,
+.admin-table tr:has(+ tr.detail-row) td {
+  border-bottom: none;
+}
+
+.history-table tr.detail-row:hover td,
+.admin-table tr.detail-row:hover td {
+  background: transparent;
+}
+
 .col-id,
 .card-id {
   font-family: 'Inter', monospace;
@@ -291,7 +307,28 @@
 
 .badge-bronze,
 .badge-silver,
-.badge-gold,
+.badge-gold {
+  border-radius: var(--swiss-radius-sm);
+}
+
+.badge-bronze {
+  background: rgba(205, 127, 50, 0.16);
+  color: #e8a86e;
+  border-color: rgba(205, 127, 50, 0.45);
+}
+
+.badge-silver {
+  background: rgba(176, 176, 176, 0.14);
+  color: #c8ccd0;
+  border-color: rgba(176, 176, 176, 0.42);
+}
+
+.badge-gold {
+  background: rgba(255, 215, 0, 0.12);
+  color: #e8c547;
+  border-color: rgba(255, 215, 0, 0.38);
+}
+
 .status-pendente,
 .status-andamento,
 .status-concluido,
@@ -302,10 +339,16 @@
   border-color: var(--swiss-border);
 }
 
-.tier-title.bronze,
-.tier-title.silver,
+.tier-title.bronze {
+  color: #e8a86e;
+}
+
+.tier-title.silver {
+  color: #c8ccd0;
+}
+
 .tier-title.gold {
-  color: var(--swiss-text);
+  color: #e8c547;
 }
 
 /* Loading & empty */
@@ -333,7 +376,7 @@
 
 /* Detail blocks */
 .detail-row td {
-  padding: 0 12px 12px !important;
+  padding: 10px 12px 12px !important;
   border-bottom: 1px solid var(--swiss-border) !important;
 }
 
@@ -345,6 +388,7 @@
   padding: 12px;
   border: 1px solid var(--swiss-border);
   border-radius: var(--swiss-radius);
+  margin-top: 2px;
 }
 
 .detail-block {

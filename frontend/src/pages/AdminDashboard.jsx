@@ -2,6 +2,11 @@ import { useState, useEffect, Fragment } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
 import Navbar from '../components/Navbar';
+import {
+  getMinSchedulingDateTime,
+  SCHEDULING_HINT,
+  validateSchedulingDateTime,
+} from '../utils/scheduling';
 import './AdminDashboard.css';
 import { 
   FaPlus, FaTrash, FaEdit, 
@@ -202,6 +207,12 @@ function AdminDashboard() {
         showSuccess('Dados do funcionário atualizados!');
       } 
       else if (modalType === 'editRevisao') {
+        const validationError = validateSchedulingDateTime(formData.datAgendamento);
+        if (validationError) {
+          showError(validationError);
+          return;
+        }
+
         await api.put(`/danke/revisao/${selectedItem.idRevisao}`, {
           tipoRevisao: parseInt(formData.tipoRevisao),
           statusRevisao: formData.statusRevisao,
@@ -692,9 +703,11 @@ function AdminDashboard() {
                       type="datetime-local" 
                       name="datAgendamento" 
                       value={formData.datAgendamento || ''} 
-                      onChange={handleInputChange} 
+                      onChange={handleInputChange}
+                      min={getMinSchedulingDateTime()}
                       required 
                     />
+                    <span className="input-hint">{SCHEDULING_HINT}</span>
                   </div>
                   <div className="modal-form-group">
                     <label>Associar a Cliente</label>

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using backend.Data;
 using backend.Models;
+using backend.Services;
 using System.Security.Claims;
 
 namespace backend.Controllers;
@@ -198,6 +199,9 @@ public class RevisaoController : ControllerBase
 
         int clienteId = int.Parse(clienteIdClaim.Value);
 
+        if (!AgendamentoValidator.TryValidate(request.DatAgendamento, out var agendamentoError))
+            return BadRequest(new { message = agendamentoError });
+
         var novaRevisao = new Revisao
         {
             StatusRevisao = "Pendente",
@@ -337,6 +341,9 @@ public class RevisaoController : ControllerBase
         var revisao = _context.Revisoes.Find(id);
         if (revisao == null)
             return NotFound();
+
+        if (!AgendamentoValidator.TryValidate(revisaoAtualizada.DatAgendamento, out var agendamentoError))
+            return BadRequest(new { message = agendamentoError });
 
         revisao.TipoRevisao = revisaoAtualizada.TipoRevisao;
         revisao.StatusRevisao = revisaoAtualizada.StatusRevisao;

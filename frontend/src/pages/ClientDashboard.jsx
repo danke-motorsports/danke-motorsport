@@ -17,6 +17,11 @@ import { useState, useEffect, Fragment } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
 import Navbar from '../components/Navbar';
+import {
+  getMinSchedulingDateTime,
+  SCHEDULING_HINT,
+  validateSchedulingDateTime,
+} from '../utils/scheduling';
 import './ClientDashboard.css';
 import { FaPlus, FaClock, FaHistory } from 'react-icons/fa';
 
@@ -62,8 +67,10 @@ function ClientDashboard() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!datAgendamento) {
-      setMessage({ text: 'Por favor, selecione uma data para o agendamento.', type: 'error' });
+
+    const validationError = validateSchedulingDateTime(datAgendamento);
+    if (validationError) {
+      setMessage({ text: validationError, type: 'error' });
       return;
     }
 
@@ -83,7 +90,11 @@ function ClientDashboard() {
       carregarRevisoes();
     } catch (error) {
       console.error('Erro ao solicitar revisão:', error);
-      setMessage({ text: 'Erro ao enviar a solicitação. Tente novamente.', type: 'error' });
+      const apiMessage = error.response?.data?.message;
+      setMessage({
+        text: apiMessage || 'Erro ao enviar a solicitação. Tente novamente.',
+        type: 'error',
+      });
     } finally {
       setSubmitting(false);
     }
@@ -151,7 +162,7 @@ function ClientDashboard() {
             <div className="form-group">
               <label>Escolha o Plano de Qualidade:</label>
               <div className="tier-cards">
-                <label className={`tier-card ${tipoRevisao === 1 ? 'selected' : ''}`}>
+                <label className={`tier-card bronze ${tipoRevisao === 1 ? 'selected' : ''}`}>
                   <input 
                     type="radio" 
                     name="tipoRevisao" 
@@ -165,7 +176,7 @@ function ClientDashboard() {
                   </div>
                 </label>
 
-                <label className={`tier-card ${tipoRevisao === 2 ? 'selected' : ''}`}>
+                <label className={`tier-card silver ${tipoRevisao === 2 ? 'selected' : ''}`}>
                   <input 
                     type="radio" 
                     name="tipoRevisao" 
@@ -179,7 +190,7 @@ function ClientDashboard() {
                   </div>
                 </label>
 
-                <label className={`tier-card ${tipoRevisao === 3 ? 'selected' : ''}`}>
+                <label className={`tier-card gold ${tipoRevisao === 3 ? 'selected' : ''}`}>
                   <input 
                     type="radio" 
                     name="tipoRevisao" 
@@ -202,9 +213,11 @@ function ClientDashboard() {
                 id="datAgendamento"
                 value={datAgendamento}
                 onChange={(e) => setDatAgendamento(e.target.value)}
+                min={getMinSchedulingDateTime()}
                 required
                 className="date-input"
               />
+              <span className="input-hint">{SCHEDULING_HINT}</span>
             </div>
 
             <div className="form-group">

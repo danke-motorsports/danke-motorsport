@@ -3,7 +3,7 @@
  * @description Instância configurada do axios para comunicação com a API Danke Motorsport.
  *
  * A URL base é lida de `VITE_API_URL` (variável de ambiente Vite).
- * Em desenvolvimento, defina em `frontend/.env.local`.
+ * Se estiver vazia em dev, as requisições usam o proxy do Vite (`/danke` → backend).
  * Em produção, configure no painel do Vercel (Environment Variables).
  *
  * Um interceptor de request injeta automaticamente o token JWT
@@ -20,8 +20,12 @@ import axios from 'axios';
  * import api from '../services/api';
  * const response = await api.get('/danke/revisao/cliente');
  */
+const configuredApiUrl = import.meta.env.VITE_API_URL?.trim();
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8080',
+  // Em dev, URL vazia usa o proxy do Vite (docker-compose / npm run dev).
+  // Em produção, defina VITE_API_URL no painel de deploy (ex.: Railway).
+  baseURL: configuredApiUrl || '',
 });
 
 /**

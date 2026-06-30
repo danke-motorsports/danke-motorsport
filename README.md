@@ -75,14 +75,18 @@ Danke-Motorsport/
 ├── frontend/          # Aplicação React (Vite)
 │   ├── src/
 │   │   ├── components/    # Componentes reutilizáveis (Navbar, etc.)
-│   │   ├── pages/         # Páginas (LandingPage, Auth, etc.)
+│   │   ├── pages/         # Páginas (LandingPage, Auth, dashboards, etc.)
 │   │   ├── routes/        # Configuração de rotas
+│   │   ├── services/      # Cliente HTTP (Axios)
+│   │   ├── styles/        # CSS compartilhado (Swiss Design)
+│   │   ├── utils/         # Helpers (rotas de auth, validação de agendamento)
 │   │   └── assets/        # Variáveis CSS globais
 │   └── package.json
 │
 └── backend/           # API REST em C# .NET
     ├── Controllers/       # Endpoints da API
     ├── Models/            # Entidades do banco (Cliente, Funcionario, Revisao)
+    ├── Services/          # Regras de negócio reutilizáveis (ex.: validação de agendamento)
     ├── Data/              # AppDbContext (EF Core)
     └── Migrations/        # Histórico de migrations do banco
 ```
@@ -162,6 +166,25 @@ sequenceDiagram
 
 * **Para o Cliente:** Landing page responsiva, cadastro e login, formulário de agendamento de revisões/diagnósticos e acompanhamento de status.
 * **Para o Funcionário:** Dashboard Kanban para gestão de revisões agendadas, atualização de status e atribuição de tarefas.
+* **Para o Admin:** Painel com visão geral, gestão de clientes, funcionários e revisões.
+
+### Planos de revisão
+
+Cada agendamento é associado a um dos três planos, identificados visualmente por badges com cores distintas:
+
+| Plano | Tipo | Descrição resumida |
+|---|---|---|
+| **Bronze** | 1 | Revisão básica de segurança e fluidos essenciais |
+| **Silver** | 2 | Revisão completa — suspensão, freios e motor |
+| **Gold** | 3 | Diagnóstico eletrônico avançado e ajustes finos |
+
+### Regras de agendamento
+
+Agendamentos são validados no **frontend** e no **backend** (`AgendamentoValidator`):
+
+* Não é permitido marcar horários no **passado**.
+* Horário comercial: **08:00 às 18:00** (fuso `America/Sao_Paulo`).
+* Mensagens de erro são exibidas ao cliente e ao administrador ao tentar salvar um horário inválido.
 
 ---
 
@@ -191,6 +214,14 @@ docker compose up --build
 | Backend API | http://localhost:8080 |
 | Swagger | http://localhost:8080/swagger |
 
+No Docker, o frontend **não chama o backend diretamente pelo browser**. O Vite faz proxy das rotas `/danke` e `/health` para o serviço `backend:8080` dentro da rede do Compose. Por isso, no `docker-compose.yml`, `VITE_API_URL` fica vazio e `API_PROXY_TARGET=http://backend:8080` é usado apenas pelo servidor de desenvolvimento do Vite.
+
+Se aparecer *"Não foi possível conectar à API"*, verifique:
+
+1. Se o container `backend` está **healthy** (`docker compose ps`).
+2. Se a porta **8080** está publicada no host (recrie com `docker compose up -d --force-recreate backend` se necessário).
+3. Se `.env.development` tem `ConnectionStrings__DefaultConnection`, `Jwt__Key` (32+ caracteres) e `AllowedOrigins__0=http://localhost:5173`.
+
 Migrations (quando necessário):
 
 ```bash
@@ -219,6 +250,8 @@ npm run dev
 # App disponível em: http://localhost:5173
 ```
 
+Em dev manual (sem Docker), o Vite também faz proxy de `/danke` para `http://localhost:8080`. Você pode deixar `VITE_API_URL` vazio ou definir `VITE_API_URL=http://localhost:8080` em `frontend/.env.local` se preferir chamar a API diretamente.
+
 ---
 
 ## Deploy em Produção
@@ -245,9 +278,17 @@ Produção usa três serviços: **Vercel** (frontend), **Railway** (backend) e *
 
 **Vercel (frontend)**
 
-| Variável | Exemplo |
-|---|---|
-| `VITE_API_URL` | `https://<backend>.up.railway.app` |
+| Variável | Exemplo | Observação |
+|---|---|---|
+| `VITE_API_URL` | `https://<backend>.up.railway.app` | Obrigatória em produção (sem proxy do Vite) |
+
+**Desenvolvimento local (`.env.development`)**
+
+| Variável | Docker Compose | Dev manual |
+|---|---|---|
+| `VITE_API_URL` | vazio (proxy do Vite) | vazio ou `http://localhost:8080` |
+| `API_PROXY_TARGET` | `http://backend:8080` | não necessário |
+| `AllowedOrigins__0` | `http://localhost:5173` | `http://localhost:5173` |
 
 ### Banco de dados (primeira vez)
 
